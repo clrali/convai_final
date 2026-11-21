@@ -7,6 +7,8 @@ cd "$(dirname "$0")/.."
 MODEL=${1:-allenai/OLMo-2-0425-1B-Instruct}
 AGENT=${AGENT_MODEL:-gpt-6.1-sol}
 BS=${BS:-32}
+SFT_BS=${SFT_BS:-2}
+SFT_GRAD_ACCUM=${SFT_GRAD_ACCUM:-4}
 RULES="chlorine mass"
 STAGE=${STAGE:-all}
 PYTHON=${WSPMOL_PYTHON:-python}
@@ -37,7 +39,8 @@ fi
 
 if run adapt; then           # SFT (LoRA) + ROME
   for r in $RULES; do
-    "$PYTHON" scripts/05_train_sft.py --model "$MODEL" --rule $r --batch-size 8
+    "$PYTHON" scripts/05_train_sft.py --model "$MODEL" --rule $r \
+      --batch-size "$SFT_BS" --grad-accum "$SFT_GRAD_ACCUM"
     "$PYTHON" scripts/06_rome.py --model "$MODEL" --rule $r
     "$PYTHON" scripts/02_run_method.py --model "$MODEL" --method sft_lora --rule $r --part dev_select --batch-size $BS
   done

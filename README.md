@@ -59,7 +59,37 @@ Slurm jobs invoke `$HOME/scratch/conda-envs/wspmol/bin/python` directly for ever
 without relying on shell activation. They log the Python executable and PyTorch version before
 starting and clear inherited `PYTHONHOME`/`PYTHONPATH` settings. If your environment is elsewhere,
 set `export WSPMOL_ENV=/full/path/to/wspmol` before submitting; `--export=ALL,...` passes it to the job.
-Environment setup failures stop the job immediately.
+Environment setup failures stop the job immediately. The launcher also logs the allocated GPU
+and performs a real CUDA allocation before loading model weights; `torch.cuda.is_available()`
+alone does not guarantee that CUDA can create a context.
+
+The `adapt` stage defaults to SFT microbatches of 1 with 8 gradient accumulation steps
+(effective batch size 8), gradient checkpointing, and no training KV cache. This reduces
+activation memory for the 13B model on a single H100, at the cost of extra computation.
+Override training batch settings independently of the evaluation batch size (`BS`):
+
+```bash
+sbatch --export=ALL,STAGE=adapt,SFT_BS=1,SFT_GRAD_ACCUM=8 slurm/stage.sbatch
+```
+
+Increasing Slurm `--mem` changes CPU RAM, not GPU memory. If evaluation later runs out of
+GPU memory, reduce `BS` separately (for example, add `BS=4` to the export list).
+
+If the initial CUDA allocation check reports “busy or unavailable,” changing the batch size
+will not help. On November 21, 2026, a minimal allocation failed on the assigned GPU on
+`atl1-1-03-010-25-0`, but passed with the same environment on `atl1-1-03-010-10-0`.
+This command requests the tested node explicitly and provides host RAM for the later
+float32 ROME model (about 51 GiB of weights alone):
+
+```bash
+sbatch --partition=coe-gpu --nodelist=atl1-1-03-010-10-0 --mem=96G \
+  --export=ALL,STAGE=adapt,BS=4 slurm/stage.sbatch
+```
+
+Node availability can change; check the job's allocation-test output. Specify the partition
+when selecting a node: the cluster's default submission routing replaced an exclusion list
+during diagnosis. Avoiding one failed allocation does not establish that every GPU on that
+node is faulty.
 
 `02_run_method.py` refuses to run WSP on the test set until the edits are frozen. It also skips ROME
 when ROME failed its factual rewrite check (`--force` overrides). The fallback in the plan is to
