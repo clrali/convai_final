@@ -1,0 +1,9 @@
+torch>=2.1
+transformers>=4.48   # OLMo 2 support
+peft>=0.10
+accelerate>=0.30
+rdkit>=2023.9
+numpy
+pandas
+openai>=1.40        # WSP agent (GPT-6.1 Sol) via the OpenAI API
+pytest

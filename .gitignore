@@ -1,0 +1,7 @@
+__pycache__/
+.hf_cache/
+artifacts/
+results/
+logs/*.out
+wspmol/data/chebi_library.tsv
+data/chebi_3star.sdf.gz

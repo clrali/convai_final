@@ -1,0 +1,47 @@
+"""Scripted stand-in for the editing LLM. Exercises the tool loop end to end
+(pipeline testing only; it is NOT the WSP method and its edits are not reported)."""
+from __future__ import annotations
+
+import json
+from types import SimpleNamespace
+
+
+class MockClient:
+    def __init__(self, env):
+        self.env = env
+        L = env.model.config.num_hidden_layers // 2
+        P, rule = env.project, env.rule
+        ctrl = "Birch"
+        d2 = [d.dialogue_id for d in env.dev if d.condition == "C2"][:4]
+        n_in = env.model.config.intermediate_size
+        hid = env.model.config.hidden_size
+        cols = max(1, min(n_in, env.budget // hid))
+        rows = max(1, min(hid, env.budget // cols))
+        self.script = [
+            ("model_info", {}),
+            ("list_dev", {"condition": "C2", "limit": 2}),
+            ("capture", {"texts": [{"user": f"Project {P}. Which candidate?"}], "layer": L,
+                         "site": "mlp_in", "position": f"token:{P}", "name": "k_proj"}),
+            ("capture", {"texts": [{"user": f"Project {ctrl}. Which candidate?"}], "layer": L,
+                         "site": "mlp_in", "position": f"token:{ctrl}", "name": "k_ctrl"}),
+            ("vector_op", {"out": "k", "op": "sub", "a": "k_proj", "b": "k_ctrl"}),
+            ("token_direction", {"token": "NONE", "name": "u_none"}),
+            ("apply_edit", {"spec": [{"type": "rank1", "param": f"model.layers.{L}.mlp.down_proj.weight",
+                                      "u": "u_none", "v": "k", "scale": 0.01, "rows": rows, "cols": cols}]}),
+            ("evaluate", {"dialogue_ids": d2}),
+            ("finish", {"notes": "mock"}),
+        ]
+        self.i = 0
+        self.chat = SimpleNamespace(completions=SimpleNamespace(create=self._create))
+
+    def _create(self, model, messages, tools):
+        name, args = self.script[min(self.i, len(self.script) - 1)]
+        self.i += 1
+        call = SimpleNamespace(id=f"call{self.i}", type="function",
+                               function=SimpleNamespace(name=name, arguments=json.dumps(args)))
+        msg = SimpleNamespace(content=None, tool_calls=[call],
+                              model_dump=lambda **k: {"role": "assistant", "content": None,
+                                                      "tool_calls": [{"id": call.id, "type": "function",
+                                                                      "function": {"name": name, "arguments": json.dumps(args)}}]})
+        return SimpleNamespace(choices=[SimpleNamespace(message=msg)],
+                               usage=SimpleNamespace(prompt_tokens=1000, completion_tokens=100))
