@@ -5,3 +5,6 @@ results/
 logs/*.out
 wspmol/data/chebi_library.tsv
 data/chebi_3star.sdf.gz
+*.tar.gz
+*.json
+*.jsonl

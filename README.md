@@ -44,9 +44,9 @@ bash scripts/smoke_test.sh && rm -rf artifacts results
 Stages, matching the milestones (each one can be submitted as a job):
 
 ```bash
-STAGE=data bash scripts/run_all.sh          # login node (needs internet for ChEBI)
+sbatch --export=ALL,STAGE=data slurm/stage.sbatch            # runs for ~5 min
 sbatch --export=ALL,STAGE=pilot slurm/stage.sbatch
-sbatch --export=ALL,STAGE=baselines_dev slurm/stage.sbatch   # Nov 19: baselines + throughput
+sbatch --export=ALL,STAGE=baselines_dev slurm/stage.sbatch   # Nov 21: baselines + throughput (runs for ~7 min)
 sbatch --export=ALL,STAGE=wsp slurm/stage.sbatch             # 8 edit runs (needs API access from the node)
 sbatch --export=ALL,STAGE=adapt slurm/stage.sbatch           # SFT (LoRA) + ROME
 sbatch --export=ALL,STAGE=freeze slurm/stage.sbatch          # select + freeze + power check

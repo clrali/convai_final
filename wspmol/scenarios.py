@@ -17,8 +17,10 @@ import random
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
 
+from rdkit import DataStructs
+
 from . import prompts as P
-from .molecules import Molecule, load_library, similarity
+from .molecules import Molecule, _fp, load_library, similarity
 from .rules import NO_RULE, RULES, Rule, revised, revision_text
 
 CONDITIONS = ["C1", "C2", "C3", "C4"]
@@ -87,25 +89,72 @@ def _best(cands, sims, rule: Rule) -> str:
     return P.LABELS[max(ok)[1]]
 
 
-class ListSampler:
-    def __init__(self, pool: list[Molecule], rng: random.Random, neighbourhood: int = 40):
-        self.pool, self.rng, self.k = pool, rng, neighbourhood
+# Minimum similarity gap between any two candidates in a list. Candidate similarities are shown
+# to 2 dp, so a gap of 0.01-0.03 asks the model to split e.g. 0.83 vs 0.81. Measured on OLMo-2-13B,
+# turn accuracy rises from ~61-67% at gaps below 0.05 to 82-93% at gaps of 0.10 or more, so the
+# margin - not the rule itself - sets the difficulty. See README "difficulty".
+MIN_SIM_MARGIN = 0.10
 
-    def sample(self, start: Molecule, rule: Rule, list_type: str, tries: int = 4000):
+
+class ListSampler:
+    def __init__(self, pool: list[Molecule], rng: random.Random, neighbourhood: int = 400,
+                 min_margin: float = MIN_SIM_MARGIN):
+        self.pool, self.rng, self.k = pool, rng, neighbourhood
+        self.min_margin = min_margin
+        self._ranked_for = None           # (inchikey, [(sim, mol)]) for the last start molecule
+        self._fps = [_fp(m.smiles) for m in pool]        # fingerprints once, aligned with pool
+
+    def _ranked(self, start: Molecule):
+        """Molecules ranked by similarity to `start`, cached: one scenario asks for five lists."""
+        if self._ranked_for is None or self._ranked_for[0] != start.inchikey:
+            # One C++ call beats thousands of Python-level Tanimoto calls.
+            sims = DataStructs.BulkTanimotoSimilarity(_fp(start.smiles), self._fps)
+            lst = [(round(v, 2), m) for v, m in zip(sims, self.pool)
+                   if m.inchikey != start.inchikey]
+            lst.sort(key=lambda x: -x[0])
+            self._ranked_for = (start.inchikey, lst)
+        return self._ranked_for[1]
+
+    # Candidates examined per attempt. Shuffling the whole ranked pool (thousands of molecules)
+    # on every retry dominated build time; drawing a bounded random subset is far cheaper and
+    # finds a valid spread just as often, because only 2-4 well-separated molecules are needed.
+    SUBSET = 128
+
+    def _pick_spread(self, src, n, rng):
+        """Greedily take n molecules whose similarities are pairwise >= min_margin apart."""
+        # rng.sample already returns the selection in random order, so no shuffle of src is needed.
+        subset = rng.sample(src, min(len(src), self.SUBSET))
+        chosen = []
+        for sim, mol in subset:
+            if all(abs(sim - s) >= self.min_margin for s, _ in chosen):
+                chosen.append((sim, mol))
+                if len(chosen) == n:
+                    rng.shuffle(chosen)       # display order is independent of similarity
+                    return chosen
+        return None
+
+    def sample(self, start: Molecule, rule: Rule, list_type: str, tries: int = 400):
         rng = self.rng
-        others = [m for m in self.pool if m.inchikey != start.inchikey]
-        others.sort(key=lambda m: -similarity(start, m))
-        near = others[: self.k]
+        ranked = self._ranked(start)
+        near = ranked[: self.k]
         new_rule = revised(rule)
+        # Filtering the whole ranked list once, not inside the retry loop.
+        violating = [(s, m) for s, m in ranked if not rule.allows(m)] if list_type == "none" else None
+        if violating is not None and len(violating) < 2:
+            return None
         for _ in range(tries):
             n = rng.choice([2, 3, 4]) if list_type != "none" else rng.choice([2, 3])
-            src = near if rng.random() < 0.8 else others
             if list_type == "none":
-                src = [m for m in others if not rule.allows(m)]
-                if len(src) < n:
-                    return None
-            cands = rng.sample(src, n)
-            sims = [similarity(start, m) for m in cands]
+                if len(violating) < n:
+                    continue
+                src = violating
+            else:
+                src = near if rng.random() < 0.8 else ranked
+            picked = self._pick_spread(src, n, rng)
+            if picked is None:
+                continue
+            sims = [s for s, _ in picked]
+            cands = [m for _, m in picked]
             if len(set(sims)) < n:            # unambiguous ranking
                 continue
             best = max(range(n), key=lambda i: sims[i])
@@ -133,12 +182,14 @@ def build_scenarios(rule_name: str, split: str, n: int, seed: int = 0,
     rule = RULES[rule_name]
     # starting molecules need neighbours of every type; filter lazily
     starts = [m for m in pool if rule.allows(m)]
-    out, idx, attempts = [], 0, 0
+    out, idx, attempts, sampler = [], 0, 0, None
     while len(out) < n and attempts < n * 20:
         attempts += 1
         rng = _scenario_rng(seed, rule_name, split, attempts)
         start = rng.choice(starts)
-        sampler = ListSampler(pool, rng)
+        if sampler is None:
+            sampler = ListSampler(pool, rng)
+        sampler.rng = rng                 # same per-attempt rng as before; reuses the fp cache
         lists = {}
         for key, typ in [("rel", "rel"), ("none", "none"), ("comply", "comply"),
                          ("rev1", "rev"), ("rev2", "rev")]:
@@ -173,6 +224,10 @@ def _make_turn(sc, key, rule_in_force: Rule, original: Rule, memory: Rule | None
         cand_names=[m.name for m in cands], cand_ids=[m.display_id for m in cands],
         sims=sims, mws=[m.mw for m in cands], has_cl=[m.has_cl for m in cands],
         gold=gold, gold_old_rule=g_old, gold_no_rule=g_none,
+        # A revision that lifts the rule (C4, chlorine) must still UPDATE the store, not delete it:
+        # dropping the block would make saved-rule prompting byte-identical to the unedited model
+        # in exactly the condition the C4 research question measures. Only C3 (memory=None) has
+        # no store at all.
         list_type=key, memory_rule=None if memory is None else memory.text(),
         oracle_rule=asdict(oracle_rule), post_change=post_change,
         should_change=post_change and gold != g_old,

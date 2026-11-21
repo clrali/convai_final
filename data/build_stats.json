@@ -2,13 +2,13 @@
   "chlorine": {
     "dev_dialogues": 960,
     "test_dialogues": 3200,
-    "dev_molecules": 2165,
-    "test_molecules": 5422
+    "dev_molecules": 1713,
+    "test_molecules": 4498
   },
   "mass": {
     "dev_dialogues": 960,
     "test_dialogues": 3200,
-    "dev_molecules": 2694,
-    "test_molecules": 6836
+    "dev_molecules": 2334,
+    "test_molecules": 6043
   }
 }
