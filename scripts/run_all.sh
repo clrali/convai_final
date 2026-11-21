@@ -6,9 +6,11 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 MODEL=${1:-allenai/OLMo-2-0425-1B-Instruct}
 AGENT=${AGENT_MODEL:-gpt-6.1-sol}
+API=${AGENT_API:-responses}
+EDITS="${WSPMOL_RUN_DIR:-.}/artifacts/edits"
 BS=${BS:-32}
-SFT_BS=${SFT_BS:-2}
-SFT_GRAD_ACCUM=${SFT_GRAD_ACCUM:-4}
+SFT_BS=${SFT_BS:-1}
+SFT_GRAD_ACCUM=${SFT_GRAD_ACCUM:-8}
 RULES="chlorine mass"
 STAGE=${STAGE:-all}
 PYTHON=${WSPMOL_PYTHON:-python}
@@ -20,7 +22,7 @@ if run data; then
 fi
 
 if run pilot; then
-  "$PYTHON" scripts/pilot_small_network.py --agent-model "$AGENT"
+  "$PYTHON" scripts/pilot_small_network.py --task xor --agent-model "$AGENT" --agent-api "$API"
 fi
 
 if run baselines_dev; then   # Nov 19 milestone: baselines + throughput check
@@ -32,8 +34,8 @@ fi
 
 if run wsp; then             # 2 rules x 2 budgets x 2 attempts = 8 edit runs
   for r in $RULES; do for b in 0.001 0.0001; do for att in 0 1; do
-    "$PYTHON" scripts/03_wsp_edit.py --model "$MODEL" --rule $r --budget $b --attempt $att \
-      --agent-model "$AGENT" --batch-size $BS
+    "$PYTHON" scripts/03_wsp_edit.py --resume --model "$MODEL" --rule $r --budget $b --attempt $att \
+      --agent-model "$AGENT" --agent-api "$API" --batch-size $BS
   done; done; done
 fi
 
@@ -52,14 +54,20 @@ fi
 
 if run test; then            # opens the test set
   for r in $RULES; do
-    for m in oracle unedited prompting wsp random_edit sft_lora rome; do
-      "$PYTHON" scripts/02_run_method.py --model "$MODEL" --method $m --rule $r --part test --batch-size $BS || echo "skipped $m/$r"
+    plan=$("$PYTHON" -m wspmol.wsp.frozen "$EDITS/FROZEN.json" "$r" "$MODEL")
+    for m in oracle unedited prompting sft_lora rome; do
+      "$PYTHON" scripts/02_run_method.py --model "$MODEL" --method "$m" --rule "$r" --part test \
+        --skip-failed-rome --batch-size "$BS"
     done
-    for e in artifacts/edits/wsp_${r}_b*_a*.pt; do     # report every attempt
-      [[ -f "$e" ]] || continue
-      n=$(basename "$e" .pt); n=${n#wsp_${r}_}
-      "$PYTHON" scripts/02_run_method.py --model "$MODEL" --method wsp_attempt --edit "$e" --tag "wsp_$n" \
-        --rule $r --part test --batch-size $BS
+    for name in $plan; do
+      if [[ "$name" == primary ]]; then
+        for m in wsp random_edit; do
+          "$PYTHON" scripts/02_run_method.py --model "$MODEL" --method "$m" --rule "$r" --part test --batch-size "$BS"
+        done
+      else
+        "$PYTHON" scripts/02_run_method.py --model "$MODEL" --method wsp_attempt --edit "$EDITS/$name.pt" \
+          --tag "wsp_b${name##*_b}" --rule "$r" --part test --batch-size "$BS"
+      fi
     done
   done
 fi

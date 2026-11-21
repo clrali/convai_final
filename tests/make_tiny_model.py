@@ -1,4 +1,5 @@
 """Create a tiny random OLMo-2-architecture model + BPE tokenizer for offline pipeline tests."""
+import os
 import sys
 from pathlib import Path
 
@@ -18,9 +19,10 @@ CHAT_TEMPLATE = (
 )
 
 
-def main(out=ROOT / "artifacts" / "tiny_model"):
+def main(out=None):
+    out = out or Path(os.environ.get("WSPMOL_RUN_DIR", ROOT)) / "artifacts" / "tiny_model"
     texts = []
-    for f in (ROOT / "data").glob("*_dev_train.jsonl"):
+    for f in Path(os.environ.get("WSPMOL_DATA_DIR", ROOT / "data")).glob("*_dev_train.jsonl"):
         for d in load(f)[:200]:
             texts += [t.user for t in d.turns]
     texts += ["The capital of France is Paris.", "Write a haiku about rain."] * 10

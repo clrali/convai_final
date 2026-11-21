@@ -21,7 +21,7 @@ def load_model(name: str = DEFAULT_MODEL, device: str | None = None, dtype=None)
     tok.padding_side = "left"
     if tok.pad_token is None:
         tok.pad_token = tok.eos_token
-    model = AutoModelForCausalLM.from_pretrained(name, dtype=dtype).to(device)
+    model = AutoModelForCausalLM.from_pretrained(name, torch_dtype=dtype).to(device)
     model.eval()
     return model, tok
 

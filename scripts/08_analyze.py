@@ -2,11 +2,13 @@
 import csv
 import json
 import random
+from pathlib import Path
 
-from common import ART, RESULTS, base_parser, dump
+from common import ART, FREEZE, RESULTS, base_parser, dump
 
 from wspmol.runner import load_records
 from wspmol.scoring import summarize
+from wspmol.wsp.frozen import selected_digest
 from wspmol.stats import paired_bootstrap, test_hypotheses
 
 ORDER = ["oracle", "prompting", "unedited", "wsp", "wsp_b0.001_a0", "wsp_b0.001_a1", "wsp_b0.0001_a0",
@@ -20,9 +22,20 @@ def main():
     ap.add_argument("--audit", type=int, default=100)
     a = ap.parse_args()
     base = RESULTS / a.part
+    frozen = json.loads(FREEZE.read_text()) if a.part == "test" and FREEZE.exists() else {}
     R, all_recs = {}, []
     for rule_dir in sorted(p for p in base.iterdir() if p.is_dir()):
         for mdir in sorted(p for p in rule_dir.iterdir() if (p / "predictions.jsonl").exists()):
+            summary_file = mdir / "summary.json"
+            if frozen and summary_file.is_file():
+                info = json.loads(summary_file.read_text()).get("info", {})
+                if info.get("method") in ("wsp", "random_edit", "wsp_attempt"):
+                    entry = frozen.get(rule_dir.name, {})
+                    name = Path(info["edit"]).stem
+                    digest = selected_digest(entry, info["method"], name) if entry else None
+                    if not digest or info.get("frozen_sha256", digest) != digest:
+                        print(f"Skipping stale WSP results in {mdir}")
+                        continue
             recs = load_records(mdir / "predictions.jsonl")
             R.setdefault(mdir.name, []).extend(recs)
             all_recs += [{**r, "method": mdir.name} for r in recs]
@@ -45,6 +58,22 @@ def main():
             lines.append(f"| {m} | {g('C1','success')} | {g('C2','success')} | {g('C3','success')} | "
                          f"{g('C4','success')} | {g('C4','post_change_success')} | {g('C3','overapp_rate')} | {ta} | {100*inv:.1f} |")
 
+        check = ART / "edits" / f"rome_{rule}.json"
+        if check.exists() and not json.loads(check.read_text())["passed"]:
+            lines.append("\nROME failed the factual rewrite check for this rule.")
+    if frozen:
+        lines.append("\n## WSP development selection\n")
+        for rule, entry in frozen.items():
+            primary = entry["primary"] or "no usable primary edit"
+            lines.append(f"- {rule} primary — {primary}")
+            if not entry["attempts"]:
+                lines.append("  - No attempts recorded")
+            for name in entry.get("missing", []):
+                lines.append(f"  - {name} — no recorded attempt")
+            for attempt in entry["attempts"]:
+                status = (f"dev dialogue success {attempt['dev_score']:.1%}" if attempt["usable"]
+                          else f"no usable edit ({attempt.get('stop_reason') or 'unspecified'})")
+                lines.append(f"  - {attempt['name']} — {status}")
     hyps = []
     if {"wsp", "unedited", "prompting"} <= set(R):
         hyps = test_hypotheses(R, rules=rules, n_boot=a.n_boot)
@@ -75,7 +104,7 @@ def main():
             lines.append(f"- {k}: IF accuracy {100 * v['if']['accuracy']:.1f}%"
                          + (f"; weights restored exactly: {rb.get('weights_restored_exactly')}" if rb else ""))
     (RESULTS / f"report_{a.part}.md").write_text("\n".join(lines) + "\n")
-    dump({"summary": summ, "hypotheses": hyps, "rq_c4": rq}, RESULTS / f"analysis_{a.part}.json")
+    dump({"summary": summ, "hypotheses": hyps, "rq_c4": rq, "wsp_selection": frozen}, RESULTS / f"analysis_{a.part}.json")
 
     # manual audit: 100 random model turns (excluding the oracle)
     pool = [r for r in all_recs if r["method"] != "oracle"]

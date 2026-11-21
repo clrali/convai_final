@@ -8,9 +8,13 @@ Applying records the exact original values so revert() restores weights bitwise.
 from __future__ import annotations
 
 import hashlib
+import io
 from dataclasses import dataclass, field
+from pathlib import Path
 
 import torch
+
+from .files import atomic_path
 
 
 @dataclass
@@ -51,40 +55,60 @@ class WeightEdit:
         tot = 0.0
         for op in self.ops:
             if op.kind == "sparse":
-                tot += float(op.values.float().pow(2).sum())
+                tot += float(op.values.double().square().sum())
             else:
                 tot += float((op.U.float() @ op.V.float().T).pow(2).sum())
         return tot ** 0.5
 
     def save(self, path):
-        from pathlib import Path
-        Path(path).parent.mkdir(parents=True, exist_ok=True)
-        torch.save({"ops": [op.to_dict() for op in self.ops], "meta": self.meta}, path)
+        with atomic_path(path) as temp:
+            torch.save({"ops": [op.to_dict() for op in self.ops], "meta": self.meta}, temp)
 
     @staticmethod
-    def load(path) -> "WeightEdit":
-        d = torch.load(path, map_location="cpu", weights_only=False)
+    def load(path, *, expected_sha256=None) -> "WeightEdit":
+        source = path
+        if expected_sha256 is not None:
+            payload = Path(path).read_bytes()
+            if hashlib.sha256(payload).hexdigest() != expected_sha256:
+                raise ValueError(f"{path} differs from the expected weight edit")
+            source = io.BytesIO(payload)
+        d = torch.load(source, map_location="cpu", weights_only=False)
         return WeightEdit(ops=[EditOp(**o) for o in d["ops"]], meta=d.get("meta", {}))
 
     # ---------- apply / revert ----------
     @torch.no_grad()
-    def apply(self, model):
+    def apply(self, model, *, require_change=False):
         if self._saved:
             raise RuntimeError("edit already applied")
         params = dict(model.named_parameters())
-        for op in self.ops:
-            p = params[op.param]
-            if op.kind == "sparse":
-                idx = op.indices.to(p.device)
-                flat = p.data.view(-1)
-                orig = flat[idx].clone()
-                flat[idx] = (orig.float() + op.values.to(p.device).float()).to(p.dtype)
-                self._saved.append((op.param, "sparse", idx, orig))
-            else:
-                orig = p.data.clone().cpu()
-                delta = op.U.to(p.device).float() @ op.V.to(p.device).float().T
-                p.data.copy_((p.data.float() + delta).to(p.dtype))
-                self._saved.append((op.param, "dense", None, orig))
+        changed = False
+        try:
+            for op in self.ops:
+                p = params[op.param]
+                if op.kind == "sparse":
+                    idx = op.indices.to(p.device)
+                    flat = p.view(-1)
+                    orig = flat[idx]
+                    updated = (orig.float() + op.values.to(p.device).float()).to(p.dtype)
+                    if not torch.isfinite(updated).all():
+                        raise ValueError(f"non-finite weight in {op.param}")
+                    if require_change and not changed:
+                        changed = not torch.equal(orig, updated)
+                    self._saved.append((op.param, "sparse", idx, orig))
+                    flat[idx] = updated
+                else:
+                    orig = p.detach().clone().cpu()
+                    delta = op.U.to(p.device).float() @ op.V.to(p.device).float().T
+                    updated = (p.float() + delta).to(p.dtype)
+                    if require_change and not changed:
+                        changed = not torch.equal(p, updated)
+                    self._saved.append((op.param, "dense", None, orig))
+                    p.copy_(updated)
+            if require_change and not changed:
+                raise ValueError("no weights changed at the model's precision")
+        except Exception:
+            self.revert(model)
+            raise
         return self
 
     @torch.no_grad()
@@ -126,8 +150,12 @@ def random_matched_edit(model, edit: WeightEdit, seed: int = 0) -> WeightEdit:
     g = torch.Generator().manual_seed(seed)
     params = dict(model.named_parameters())
     ops = []
+    indices = {}
+    for name in dict.fromkeys(op.param for op in edit.ops):
+        groups = [op for op in edit.ops if op.param == name]
+        n = sum(op.n_entries(params[name].shape) for op in groups)
+        indices[name] = torch.randperm(params[name].numel(), generator=g)[:n].clone()
     for op in edit.ops:
-        p = params[op.param]
         if op.kind == "sparse":
             n = op.indices.numel()
             target = op.values.float().norm()
@@ -135,7 +163,7 @@ def random_matched_edit(model, edit: WeightEdit, seed: int = 0) -> WeightEdit:
             delta = op.U.float() @ op.V.float().T
             n = delta.numel() if delta.numel() < 2_000_000 else int((delta != 0).sum())
             target = delta.norm()
-        idx = torch.randperm(p.numel(), generator=g)[:n]
+        idx, indices[op.param] = indices[op.param][:n], indices[op.param][n:]
         vals = torch.randn(n, generator=g)
         vals = vals / vals.norm() * target
         ops.append(EditOp(param=op.param, kind="sparse", indices=idx, values=vals))

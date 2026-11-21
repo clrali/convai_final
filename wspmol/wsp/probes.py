@@ -36,6 +36,8 @@ class ProbeEnv:
     def __init__(self, model, tok, dev_dialogues: list[Dialogue], *, rule: str, project: str,
                  budget_fraction: float, max_probe_batches: int = 25, eval_size: int = 48,
                  seed: int = 0, batch_size: int = 16):
+        if not 0 < budget_fraction <= 1 or not 0 <= max_probe_batches <= 25 or batch_size < 1:
+            raise ValueError("expected a positive weight fraction <= 1, 0–25 probes and positive batch_size")
         self.model, self.tok = model, tok
         self.dev = dev_dialogues
         self.rule, self.project = rule, project
@@ -78,6 +80,8 @@ class ProbeEnv:
         if "dialogue" in item:
             d = self.by_id[item["dialogue"]]
             k = int(item.get("turn", 0))
+            if not 0 <= k < len(d.turns):
+                raise ValueError("turn must index a scored turn, starting at 0")
             msgs = [{"role": "system", "content": SYSTEM_PROMPT}]
             for t in d.turns[:k]:
                 msgs += [{"role": "user", "content": t.user}, {"role": "assistant", "content": t.gold}]
@@ -99,7 +103,7 @@ class ProbeEnv:
         if at < 0:
             raise ValueError(f"substring {sub!r} not in text")
         end = at + len(sub)
-        return max(i for i, (s, e) in enumerate(ids_offsets) if s < end)
+        return max(i for i, (s, e) in enumerate(ids_offsets) if s < end and e > at)
 
     # ------------------------------------------------------------------ tools
     def model_info(self) -> dict:
@@ -121,11 +125,39 @@ class ProbeEnv:
             "probe_batches_used": self.probe_batches, "probe_batches_max": self.max_probe_batches,
         }
 
+    @torch.no_grad()
+    def read_weights(self, param: str, rows: list[int], cols: list[int]) -> dict:
+        """Inspect a small submatrix of the currently edited model without a forward pass."""
+        weight = self._param(param)
+        if weight.ndim != 2 or not rows or not cols or len(rows) * len(cols) > 256:
+            raise ValueError("select between 1 and 256 entries of a matrix")
+        for indices, size in zip((rows, cols), weight.shape):
+            if any(type(i) is not int or not 0 <= i < size for i in indices):
+                raise ValueError(f"indices must be integers from 0 to {size - 1}")
+        r = torch.tensor(rows, device=weight.device)
+        c = torch.tensor(cols, device=weight.device)
+        return {"param": param, "rows": rows, "cols": cols, "values": weight[r[:, None], c].float().tolist()}
+
     def list_dev(self, condition: str | None = None, limit: int = 4, offset: int = 0) -> list[dict]:
         ds = [d for d in self.dev if condition is None or d.condition == condition][offset:offset + limit]
         return [{"dialogue_id": d.dialogue_id, "condition": d.condition, "project": d.project,
                  "turns": [{"user": t.user, "gold": t.gold, "gold_if_no_rule": t.gold_no_rule}
                            for t in d.turns]} for d in ds]
+
+    def _text_batches(self, texts, *, offsets=False):
+        if not 0 < len(texts) <= MAX_TEXTS:
+            raise ValueError(f"expected 1 to {MAX_TEXTS} probe texts")
+        for start in range(0, len(texts), self.batch_size):
+            batch = [self._resolve_text(x) for x in texts[start:start + self.batch_size]]
+            enc = self.tok(batch, return_tensors="pt", padding=True, return_offsets_mapping=offsets,
+                           add_special_tokens=False)
+            mapping = enc.pop("offset_mapping").tolist() if offsets else None
+            mask = enc.attention_mask
+            if not mask.any(dim=1).all():
+                raise ValueError("probe texts must contain tokens")
+            # The last real token can differ across examples with right padding.
+            last = (mask * torch.arange(mask.size(1))).max(dim=1).values
+            yield batch, enc.to(self.model.device), mapping, last.to(self.model.device)
 
     @torch.no_grad()
     def capture(self, texts: list, layer: int, site: str, position: str = "last",
@@ -133,25 +165,28 @@ class ProbeEnv:
         self._probe()
         if site not in SITES:
             raise ValueError(f"site must be one of {SITES}")
-        texts = texts[:MAX_TEXTS]
         L = self._layers()[layer]
         mod, kind = {"resid_post": (L, "out"), "mlp_in": (L.mlp.down_proj, "pre"),
                      "mlp_out": (L.mlp, "out"), "attn_out": (L.self_attn, "out")}[site]
         vecs = []
-        for item in texts:
-            text = self._resolve_text(item)
-            enc = self.tok(text, return_offsets_mapping=True, add_special_tokens=False)
-            pos = self._position(text, enc["offset_mapping"], position)
-            store = {}
+        for batch, enc, offsets, last in self._text_batches(texts, offsets=True):
+            positions = last if position == "last" else [
+                self._position(text, mapping, position) for text, mapping in zip(batch, offsets)]
+            rows = torch.arange(len(batch), device=self.model.device)
+
+            def collect(activation):
+                vecs.append(activation[rows, positions].float().cpu())
+
             if kind == "pre":
-                h = mod.register_forward_pre_hook(lambda m, a: store.__setitem__("x", a[0]))
+                handle = mod.register_forward_pre_hook(lambda m, a: collect(a[0]))
             else:
-                h = mod.register_forward_hook(
-                    lambda m, a, o: store.__setitem__("x", o[0] if isinstance(o, tuple) else o))
-            self.model(torch.tensor([enc["input_ids"]], device=self.model.device))
-            h.remove()
-            vecs.append(store["x"][0, pos].float().cpu())
-        V = torch.stack(vecs)
+                handle = mod.register_forward_hook(
+                    lambda m, a, o: collect(o[0] if isinstance(o, tuple) else o))
+            try:
+                self.model.model(**enc, use_cache=False)
+            finally:
+                handle.remove()
+        V = torch.cat(vecs)
         v = V.mean(0) if reduce == "mean" else V[0]
         name = name or f"cap_{site}_L{layer}_{len(self.vectors)}"
         self.vectors[name] = v
@@ -164,14 +199,16 @@ class ProbeEnv:
         self._probe()
         cand_ids = {c: self.tok(c, add_special_tokens=False)["input_ids"][0] for c in candidates}
         out = []
-        for item in texts[:MAX_TEXTS]:
-            text = self._resolve_text(item)
-            ids = self.tok(text, return_tensors="pt", add_special_tokens=False)["input_ids"].to(self.model.device)
-            lp = torch.log_softmax(self.model(ids).logits[0, -1].float(), -1)
-            top = lp.topk(5)
-            out.append({"logprobs": {c: round(float(lp[i]), 3) for c, i in cand_ids.items()},
-                        "top5": [(self.tok.decode([int(i)]), round(float(v), 3))
-                                 for v, i in zip(top.values, top.indices)]})
+        for batch, enc, _, last in self._text_batches(texts):
+            hidden = self.model.model(**enc, use_cache=False).last_hidden_state
+            # OLMo 2's LM head is the output projection of the final hidden state.
+            rows = torch.arange(len(batch), device=hidden.device)
+            logits = self.model.get_output_embeddings()(hidden[rows, last])
+            for lp in logits.float().log_softmax(-1).cpu():
+                top = lp.topk(min(5, lp.numel()))
+                out.append({"logprobs": {c: round(float(lp[i]), 3) for c, i in cand_ids.items()},
+                            "top5": [(self.tok.decode([int(i)]), round(float(v), 3))
+                                     for v, i in zip(top.values, top.indices)]})
         return out
 
     def evaluate(self, dialogue_ids: list[str] | None = None, show_errors: int = 5) -> dict:
@@ -192,18 +229,22 @@ class ProbeEnv:
         return {"dim": v.numel(), "norm": round(float(v.norm()), 4),
                 "top_dims": [(int(i), round(float(v[i]), 4)) for i in top.indices]}
 
+    @torch.no_grad()
     def token_direction(self, token: str, name: str | None = None, source: str = "unembed") -> dict:
         tid = self.tok(token, add_special_tokens=False)["input_ids"]
+        if not tid or source not in ("embed", "unembed"):
+            raise ValueError("expected a nonempty token and embed or unembed source")
         W = (self.model.lm_head.weight if source == "unembed" else self.model.model.embed_tokens.weight)
         v = W[tid].float().mean(0).detach().cpu()
         name = name or f"tok_{source}_{token.strip()}"
         self.vectors[name] = v
         return {"name": name, "token_ids": tid, **self._vec_summary(v)}
 
+    @torch.no_grad()
     def vector_op(self, out: str, op: str, a: str, b: str | None = None, scalar: float = 1.0,
                   k: int | None = None) -> dict:
         A = self.vectors[a]
-        B = self.vectors[b] if b else None
+        B = self.vectors[b] if op in ("sub", "add", "project_out", "cosine") else None
         if op == "sub":
             v = A - B
         elif op == "add":
@@ -222,7 +263,7 @@ class ProbeEnv:
         elif op == "cosine":
             return {"cosine": float(torch.cosine_similarity(A, B, 0))}
         elif op == "map_through":           # B is a param name: v = W @ A  or  W^T @ A
-            W = self._param(b).float().detach().cpu()
+            W = self._param(b).detach().cpu().float()
             v = W @ A if W.shape[1] == A.numel() else W.T @ A
         else:
             raise ValueError(f"unknown op {op}")
@@ -237,46 +278,66 @@ class ProbeEnv:
              -> dW[r,c] = scale*u[r]*v[c] on the top-|u| rows x top-|v| cols
           {"type":"entries","param":P,"entries":[[row,col,delta],...]}
         """
+        if not spec:
+            raise ValueError("an edit needs at least one operation")
         ops = []
+        remaining = self.budget
+        per_param = {}
         for it in spec:
             p = self._param(it["param"])
             out_d, in_d = p.shape
             if it["type"] == "rank1":
                 u, v = self.vectors[it["u"]], self.vectors[it["v"]]
                 if u.numel() != out_d or v.numel() != in_d:
-                    raise ValueError(f"shape mismatch: param {list(p.shape)} needs u[{out_d}], v[{in_d}]; "
-                                     f"got u[{u.numel()}], v[{v.numel()}]")
-                rows = u.abs().topk(min(int(it.get("rows") or out_d), out_d)).indices
-                cols = v.abs().topk(min(int(it.get("cols") or in_d), in_d)).indices
+                    raise ValueError(f"{it['param']} needs u[{out_d}] and v[{in_d}]")
+                nr = out_d if it.get("rows") is None else it["rows"]
+                nc = in_d if it.get("cols") is None else it["cols"]
+                if type(nr) is not int or type(nc) is not int or not (0 < nr <= out_d and 0 < nc <= in_d):
+                    raise ValueError("rows and cols must be positive integers within the matrix dimensions")
+                if nr * nc > remaining:
+                    raise ValueError(f"rank1 edit exceeds remaining budget of {remaining} entries")
+                rows = u.abs().topk(nr).indices
+                cols = v.abs().topk(nc).indices
                 vals = float(it.get("scale", 1.0)) * torch.outer(u[rows], v[cols])
                 flat = (rows[:, None] * in_d + cols[None, :]).reshape(-1)
-                ops.append(EditOp(param=it["param"], kind="sparse", indices=flat.long(),
-                                  values=vals.reshape(-1).float()))
             elif it["type"] == "entries":
-                e = torch.tensor(it["entries"], dtype=torch.float64)
-                flat = (e[:, 0].long() * in_d + e[:, 1].long())
-                ops.append(EditOp(param=it["param"], kind="sparse", indices=flat,
-                                  values=e[:, 2].float()))
+                entries = it["entries"]
+                if not 0 < len(entries) <= remaining:
+                    raise ValueError(f"expected 1 to {remaining} entries within the edit budget")
+                for row, col, delta in entries:
+                    if (type(row) is not int or type(col) is not int
+                            or not (0 <= row < out_d and 0 <= col < in_d)):
+                        raise ValueError(f"invalid coordinate ({row}, {col}) for {list(p.shape)}")
+                flat = torch.tensor([r * in_d + c for r, c, _ in entries])
+                vals = torch.tensor([v for _, _, v in entries], dtype=torch.float32)
+                if flat.unique().numel() != flat.numel():
+                    raise ValueError(f"duplicate entries in {it['param']}")
             else:
                 raise ValueError(f"unknown edit type {it['type']}")
+            remaining -= flat.numel()
+            per_param.setdefault(it["param"], []).append(flat)
+            ops.append(EditOp(param=it["param"], kind="sparse", indices=flat, values=vals.reshape(-1)))
+        for param, blocks in per_param.items():
+            if len(blocks) > 1:
+                flat = torch.cat(blocks)
+                if flat.unique().numel() != flat.numel():
+                    raise ValueError(f"overlapping entries in {param}")
         return WeightEdit(ops=ops)
 
     def apply_edit(self, spec: list[dict]) -> dict:
-        new = self.build_edit(spec)
+        try:
+            new = self.build_edit(spec)
+        except ValueError as exc:
+            return {"ok": False, "error": str(exc)}
         n = new.n_entries(self.model)
-        if n > self.budget:
-            return {"ok": False, "error": f"edit touches {n} entries > budget {self.budget}"}
-        # check for duplicate indices within one param (would make revert ambiguous)
-        seen = {}
-        for op in new.ops:
-            s = seen.setdefault(op.param, set())
-            idx = set(op.indices.tolist())
-            if s & idx:
-                return {"ok": False, "error": f"overlapping entries in {op.param}"}
-            s |= idx
         if self.edit is not None:
             self.edit.revert(self.model)
-        new.apply(self.model)
+        try:
+            new.apply(self.model, require_change=True)
+        except Exception:
+            if self.edit is not None:
+                self.edit.apply(self.model)
+            raise
         self.edit, self.edit_spec = new, spec
         return {"ok": True, "entries": n, "budget": self.budget, "l2_norm": round(new.l2_norm(), 4)}
 
@@ -288,12 +349,12 @@ class ProbeEnv:
 
     # -------------------------------------------------------------- dispatch
     def call(self, name: str, args: dict):
-        fn = {"model_info": self.model_info, "list_dev": self.list_dev, "capture": self.capture,
+        tools = {"model_info": self.model_info, "list_dev": self.list_dev, "capture": self.capture,
               "next_token_logprobs": self.next_token_logprobs, "evaluate": self.evaluate,
               "token_direction": self.token_direction, "vector_op": self.vector_op,
-              "apply_edit": self.apply_edit, "revert_edit": self.revert_edit}[name]
+              "apply_edit": self.apply_edit, "revert_edit": self.revert_edit, "read_weights": self.read_weights}
         try:
-            res = fn(**args)
+            res = tools[name](**args)
         except ProbeBudgetExceeded as e:
             res = {"error": str(e)}
         except Exception as e:                       # report tool errors back to the agent
@@ -303,4 +364,4 @@ class ProbeEnv:
 
 
 def to_json(x) -> str:
-    return json.dumps(x, default=lambda o: o.tolist() if hasattr(o, "tolist") else str(o))[:20000]
+    return json.dumps(x, default=lambda o: o.tolist() if hasattr(o, "tolist") else str(o))

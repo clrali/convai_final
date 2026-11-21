@@ -10,7 +10,7 @@ ALL_METHODS = MODEL_METHODS + ["oracle"]
 
 
 def prepare(method: str, model, tok, rule: str, artifacts: Path, edit_path: str | None = None,
-            seed: int = 0):
+            seed: int = 0, *, expected_sha256: str | None = None):
     """Mutates `model` as required; returns (model, use_memory, info).
 
     Only `prompting` reads the saved-rule store (oracle is handled separately);
@@ -23,7 +23,7 @@ def prepare(method: str, model, tok, rule: str, artifacts: Path, edit_path: str 
         return model, True, info
     if method in ("wsp", "wsp_attempt", "random_edit"):
         path = Path(edit_path) if edit_path else artifacts / "edits" / f"wsp_{rule}_primary.pt"
-        edit = WeightEdit.load(path)
+        edit = WeightEdit.load(path, expected_sha256=expected_sha256)
         info["edit"] = str(path)
         if method == "random_edit":
             edit = random_matched_edit(model, edit, seed=seed)

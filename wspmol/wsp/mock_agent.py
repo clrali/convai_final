@@ -32,16 +32,12 @@ class MockClient:
             ("finish", {"notes": "mock"}),
         ]
         self.i = 0
-        self.chat = SimpleNamespace(completions=SimpleNamespace(create=self._create))
+        self.responses = SimpleNamespace(create=self._create)
 
-    def _create(self, model, messages, tools):
-        name, args = self.script[min(self.i, len(self.script) - 1)]
+    def _create(self, **kwargs):
+        name, args = self.script[self.i]
         self.i += 1
-        call = SimpleNamespace(id=f"call{self.i}", type="function",
-                               function=SimpleNamespace(name=name, arguments=json.dumps(args)))
-        msg = SimpleNamespace(content=None, tool_calls=[call],
-                              model_dump=lambda **k: {"role": "assistant", "content": None,
-                                                      "tool_calls": [{"id": call.id, "type": "function",
-                                                                      "function": {"name": name, "arguments": json.dumps(args)}}]})
-        return SimpleNamespace(choices=[SimpleNamespace(message=msg)],
-                               usage=SimpleNamespace(prompt_tokens=1000, completion_tokens=100))
+        call = SimpleNamespace(call_id=f"call{self.i}", type="function_call",
+                               name=name, arguments=json.dumps(args))
+        return SimpleNamespace(id=f"resp{self.i}", output_text="", output=[call],
+                               usage=SimpleNamespace(input_tokens=0, output_tokens=0))

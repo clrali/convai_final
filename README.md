@@ -1,8 +1,8 @@
 # Can Weight-Space Programming Preserve Molecular Design Constraints Across Dialogue Turns?
 
 Implementation of the experiment in the ECE 6256 / CS 6604 proposal (De Onaindia, Patil, Saha, Li).
-An LLM agent (GPT-6.1 Sol) edits OLMo 2 1B Instruct's weights **using forward probes only**, so the
-assistant keeps applying a project rule (mass ≤ 250 Da, or no chlorine) across sessions. It is
+The experiment tests whether GPT-6.1 Sol can edit OLMo 2 1B Instruct's weights **using forward probes only**
+to carry a project rule (mass ≤ 250 Da, or no chlorine) across sessions. It is
 compared against an unedited model, saved-rule prompting, SFT (LoRA), ROME, a random matched edit
 and an RDKit oracle.
 
@@ -30,18 +30,37 @@ cd /home/hice1/cli725/scratch/conv_ai/CAI_FinalProject
 module load anaconda3
 conda create -n wspmol python=3.11 -y && conda activate wspmol
 pip install -r requirements.txt
+export WSPMOL_ENV="$CONDA_PREFIX"
 export OPENAI_API_KEY=...          # WSP agent + pilot only
 ```
 
-Check everything works without a GPU or API key first (tiny random model plus a scripted agent, about 3 minutes):
+The offline smoke test uses a tiny random OLMo 2, runs the eight scripted edit attempts and prints the temporary directory containing its generated datasets, edits, predictions and report.
 
 ```bash
-bash scripts/smoke_test.sh && rm -rf artifacts results
+bash scripts/smoke_test.sh
 ```
 
-## Running
+## Running the GPT editor
 
-Stages, matching the milestones (each one can be submitted as a job):
+With the dependencies installed and `OPENAI_API_KEY` set, run one development attempt from the repository root. The checked-in development files are ready to use.
+
+```bash
+python scripts/03_wsp_edit.py --rule chlorine --budget 0.001 --attempt 0
+```
+
+The editor receives the project ID, the rule and labelled `dev_train` examples. GPT can inspect selected weight entries, compare activation vectors and token scores, propose a sparse edit, and observe its effects on development dialogues. A replacement must fit the entry budget and change at least one stored weight at the target precision. Each activation, log-probability or dialogue evaluation request consumes one of 25 logical probe batches. The runtime may split that batch into smaller forward passes to fit memory. Selection uses a separate `dev_select` split.
+
+The default agent is `gpt-6.1-sol` through the Responses API. Set `AGENT_MODEL` to choose another editor. For a compatible endpoint, set `OPENAI_BASE_URL` or pass `--base-url`. For a chat-completions-only endpoint, use `--agent-api chat` (or `AGENT_API=chat` with the stage launcher). [OpenAI model documentation](https://developers.openai.com/api/docs/models/gpt-6.1-sol)
+
+Each attempt writes its transcript, probe count, token usage and stop reason to `artifacts/edits/wsp_*.json`. A usable edit also has a `.pt` file and SHA-256 digest. The cost field uses the proposal's Sol rates of $2/M input and $10/M output tokens. The WSP stage resumes completed attempts with matching data and settings. An API failure records the partial transcript and exits the stage so it can be retried.
+
+The pilot stage asks the editor to repair a published nine-parameter XOR network with one scalar change. It scores all four inputs and records the before/after accuracy and number of changed entries. The task choice implements the proposal's small-network sanity check. The original quadrant pilot remains available with `--task quadrant`. [Published XOR repair fixture](https://github.com/ttm/weight-space-programming/blob/main/fixtures/xor2_corrupted.json)
+
+Use a separate `WSPMOL_RUN_DIR` for a matched Astra fallback or an alternate target such as 13B. It controls the `artifacts/` and `results/` directories. `WSPMOL_DATA_DIR` can override the default `data/` location.
+
+## Running the full experiment
+
+Run the stages in dependency order. Wait for edit attempts and development baselines to finish before freezing, then wait for the freeze before submitting held-out scoring. The data stage regenerates the checked-in splits.
 
 ```bash
 sbatch --export=ALL,STAGE=data slurm/stage.sbatch            # runs for ~5 min
@@ -65,7 +84,7 @@ alone does not guarantee that CUDA can create a context.
 
 The `adapt` stage defaults to SFT microbatches of 1 with 8 gradient accumulation steps
 (effective batch size 8), gradient checkpointing, and no training KV cache. This reduces
-activation memory for the 13B model on a single H100, at the cost of extra computation.
+activation memory when running the 1B target or a larger target.
 Override training batch settings independently of the evaluation batch size (`BS`):
 
 ```bash
@@ -78,12 +97,11 @@ GPU memory, reduce `BS` separately (for example, add `BS=4` to the export list).
 If the initial CUDA allocation check reports “busy or unavailable,” changing the batch size
 will not help. On November 21, 2026, a minimal allocation failed on the assigned GPU on
 `atl1-1-03-010-25-0`, but passed with the same environment on `atl1-1-03-010-10-0`.
-This command requests the tested node explicitly and provides host RAM for the later
-float32 ROME model (about 51 GiB of weights alone):
+The historical 13B run used the following node and host memory allocation for float32 ROME (about 51 GiB of weights alone).
 
 ```bash
 sbatch --partition=coe-gpu --nodelist=atl1-1-03-010-10-0 --mem=96G \
-  --export=ALL,STAGE=adapt,BS=4 slurm/stage.sbatch
+  --export=ALL,STAGE=adapt,BS=4,MODEL=allenai/OLMo-2-1124-13B-Instruct slurm/stage.sbatch
 ```
 
 Node availability can change; check the job's allocation-test output. Specify the partition
@@ -95,9 +113,7 @@ node is faulty.
 when ROME failed its factual rewrite check (`--force` overrides). The fallback in the plan is to
 report that failure and finish the other comparisons.
 
-Set `AGENT_MODEL` to the real API model ID for Sol. For the Astra fallback, pass
-`--base-url` / `--agent-model` to `03_wsp_edit.py`. Token usage and estimated cost
-($2/M input, $10/M output) are logged in `artifacts/edits/wsp_*.json`.
+The freeze record includes each usable attempt's digest and development score, the selected primary, failed attempts, and missing planned attempts. Held-out WSP and its random control verify the selected digest before loading dialogues. For older freeze manifests, the existing primary digest remains usable. Recreate the manifest on development data to record individual attempt digests before evaluating those attempts.
 
 ## Design choices the proposal leaves open (change them before freezing)
 
