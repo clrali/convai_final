@@ -8,3 +8,4 @@ data/chebi_3star.sdf.gz
 *.tar.gz
 *.json
 *.jsonl
+.venv/

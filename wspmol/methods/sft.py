@@ -62,6 +62,8 @@ def _batches(examples, batch_size, rng):
 def train_lora(model, tok, dialogues, out_dir, *, r=16, alpha=32, lr=2e-4, epochs=2,
                batch_size=4, grad_accum=2, seed=0, target_modules=None,
                gradient_checkpointing=False, max_len=2048, log=print):
+    if min(batch_size, grad_accum, epochs) < 1:
+        raise ValueError("batch_size, grad_accum and epochs must be positive")
     torch.manual_seed(seed)
     rng = random.Random(seed)
     target_modules = target_modules or ["q_proj", "k_proj", "v_proj", "o_proj",
@@ -70,53 +72,65 @@ def train_lora(model, tok, dialogues, out_dir, *, r=16, alpha=32, lr=2e-4, epoch
                      task_type="CAUSAL_LM")
     pm = get_peft_model(model, cfg)
     pm.print_trainable_parameters()
+    previous_cache = pm.config.use_cache
     if gradient_checkpointing:
         # transformers>=5 renamed this; fall back for older versions
         (getattr(pm, "activation_checkpointing_enable", None) or pm.gradient_checkpointing_enable)()
         pm.enable_input_require_grads()
         pm.config.use_cache = False       # incompatible with checkpointing; silences the warning
 
-    examples = build_examples(tok, dialogues, max_len=max_len)
+    examples = build_examples(tok, dialogues, max_len)
     toks = sum(len(x) for x, _ in examples)
     sup = sum(sum(1 for v in y if v != -100) for _, y in examples)
     log(f"SFT examples: {len(examples)} dialogues ({len(dialogues)} given), "
         f"{toks} tokens, {sup} supervised")
 
+    if not sup:
+        raise ValueError("No supervised tokens in the SFT examples")
     opt = torch.optim.AdamW([p for p in pm.parameters() if p.requires_grad], lr=lr)
-    per_epoch = math.ceil(len(examples) / batch_size)
-    # Count OPTIMIZER steps, not micro-batches: with grad_accum > 1 the two differ by that
-    # factor, and a schedule built on micro-batches would barely decay the learning rate.
-    opt_steps = max(1, math.ceil(per_epoch * epochs / grad_accum))
+    effective_batch = batch_size * grad_accum
+    opt_steps = epochs * math.ceil(len(examples) / effective_batch)
     sched = torch.optim.lr_scheduler.LambdaLR(opt, lambda s: max(0.0, 1 - s / opt_steps))
-    log(f"batch_size={batch_size} grad_accum={grad_accum} -> {per_epoch * epochs} micro-batches, "
-        f"{opt_steps} optimizer steps")
+    log(f"batch_size={batch_size} grad_accum={grad_accum} -> {opt_steps} optimizer steps")
 
     pm.train()
     pad, step, t0 = tok.pad_token_id, 0, time.time()
     for ep in range(epochs):
-        micro = 0
-        for batch in _batches(examples, batch_size, rng):
-            L = max(len(x) for x, _ in batch)
-            ids = torch.full((len(batch), L), pad)
-            lab = torch.full((len(batch), L), -100)
-            att = torch.zeros((len(batch), L), dtype=torch.long)
-            for j, (x, y) in enumerate(batch):          # right padding for training
-                ids[j, :len(x)] = torch.tensor(x)
-                lab[j, :len(y)] = torch.tensor(y)
-                att[j, :len(x)] = 1
-            dev = pm.device
-            loss = pm(input_ids=ids.to(dev), attention_mask=att.to(dev), labels=lab.to(dev)).loss
-            (loss / grad_accum).backward()
-            micro += 1
-            if micro % grad_accum == 0:
-                opt.step(); sched.step(); opt.zero_grad()
-                step += 1
-                if step % 10 == 0 or step == 1:
-                    log(f"epoch {ep} opt-step {step}/{opt_steps} loss {loss.item():.4f} "
-                        f"lr {sched.get_last_lr()[0]:.2e} ({time.time()-t0:.0f}s)")
-        if micro % grad_accum:                           # flush a partial final group
-            opt.step(); sched.step(); opt.zero_grad()
+        for window in _batches(examples, effective_batch, rng):
+            # Causal LM cross entropy is averaged over supervised next tokens.
+            # Normalize once per optimizer update, including a partial last window.
+            counts = [sum(v != -100 for v in labels[1:]) for _, labels in window]
+            total = sum(counts)
+            mean_loss = torch.zeros((), device=pm.device)
+            for start in range(0, len(window), batch_size):
+                batch = window[start:start + batch_size]
+                n_tokens = sum(counts[start:start + batch_size])
+                if not n_tokens:
+                    continue
+                length = max(len(x) for x, _ in batch)
+                ids = torch.full((len(batch), length), pad)
+                lab = torch.full((len(batch), length), -100)
+                att = torch.zeros_like(ids)
+                for j, (x, y) in enumerate(batch):
+                    ids[j, :len(x)] = torch.tensor(x)
+                    lab[j, :len(y)] = torch.tensor(y)
+                    att[j, :len(x)] = 1
+                dev = pm.device
+                loss = pm(input_ids=ids.to(dev), attention_mask=att.to(dev), labels=lab.to(dev)).loss
+                weighted_loss = loss * (n_tokens / total)
+                weighted_loss.backward()
+                mean_loss += weighted_loss.detach()
+            opt.step()
+            sched.step()
+            opt.zero_grad()
             step += 1
+            if step % 10 == 0 or step == 1:
+                log(f"epoch {ep} opt-step {step}/{opt_steps} loss {mean_loss.item():.4f} "
+                    f"lr {sched.get_last_lr()[0]:.2e} ({time.time()-t0:.0f}s)")
+    if gradient_checkpointing:
+        (getattr(pm, "activation_checkpointing_disable", None) or pm.gradient_checkpointing_disable)()
+        pm.disable_input_require_grads()
+        pm.config.use_cache = previous_cache
     pm.eval()
     pm.save_pretrained(out_dir)
     log(f"done in {time.time()-t0:.0f}s")

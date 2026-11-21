@@ -47,4 +47,4 @@ print(f"CUDA allocation check passed: {torch.cuda.get_device_name(0)}; "
 PYTHON
 export HF_HOME="$SLURM_SUBMIT_DIR/.hf_cache"
 export STAGE="${STAGE:-all}"
-exec bash scripts/run_all.sh "${MODEL:-allenai/OLMo-2-1124-13B-Instruct}"
+exec bash scripts/run_all.sh "${MODEL:-allenai/OLMo-2-0425-1B-Instruct}"

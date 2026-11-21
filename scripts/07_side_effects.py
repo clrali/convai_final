@@ -1,8 +1,9 @@
 """Rollback check + 200-item instruction-following slice for each adaptation vs. the unedited model."""
-from common import ART, RESULTS, base_parser, dump, logger
+from common import ART, FREEZE, RESULTS, base_parser, dump, logger
 
 from wspmol.edits import WeightEdit, random_matched_edit
 from wspmol.model import load_model
+from wspmol.wsp.frozen import read_selection, verify_edit
 from wspmol.side_effects import instruction_following, rollback_check
 
 PROBES = ["Project Heron. My starting molecule is toluene.", "The capital of France is",
@@ -22,9 +23,15 @@ def main():
         edits = {"wsp": ART / "edits" / f"wsp_{rule}_primary.pt",
                  "rome": ART / "edits" / f"rome_{rule}.pt"}
         for name, path in edits.items():
+            digest = None
+            if name == "wsp" and FREEZE.exists():
+                entry = read_selection(FREEZE, rule, a.model)
+                if not entry["primary"]:
+                    continue
+                digest = verify_edit(entry, name, path)
             if not path.exists():
                 continue
-            e = WeightEdit.load(path)
+            e = WeightEdit.load(path, expected_sha256=digest)
             variants = {name: e}
             if name == "wsp":
                 variants["random_edit"] = random_matched_edit(model, e, seed=a.seed)
