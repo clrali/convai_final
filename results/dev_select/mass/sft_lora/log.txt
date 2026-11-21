@@ -1,0 +1,32 @@
+17:19:46 sft_lora on mass/dev_select: 480 dialogues
+17:22:52 {
+ "mass": {
+  "C1": {
+   "invalid": 0.0,
+   "success": 0.8416666666666667,
+   "turn_acc": 0.9472222222222222,
+   "n_scenarios": 120
+  },
+  "C2": {
+   "invalid": 0.0,
+   "success": 0.7833333333333333,
+   "turn_acc": 0.925,
+   "n_scenarios": 120
+  },
+  "C3": {
+   "invalid": 0.0,
+   "overapp_rate": 0.0125,
+   "success": 0.9416666666666667,
+   "turn_acc": 0.9805555555555555,
+   "n_scenarios": 120
+  },
+  "C4": {
+   "invalid": 0.0,
+   "post_change_success": 0.9833333333333333,
+   "should_change_acc": 0.9916666666666667,
+   "success": 0.9166666666666666,
+   "turn_acc": 0.9722222222222221,
+   "n_scenarios": 120
+  }
+ }
+}

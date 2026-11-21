@@ -1,0 +1,32 @@
+17:32:16 prompting on mass/dev_select: 480 dialogues
+17:33:18 {
+ "mass": {
+  "C1": {
+   "invalid": 0.0,
+   "success": 0.10833333333333334,
+   "turn_acc": 0.55,
+   "n_scenarios": 120
+  },
+  "C2": {
+   "invalid": 0.0,
+   "success": 0.08333333333333333,
+   "turn_acc": 0.5027777777777778,
+   "n_scenarios": 120
+  },
+  "C3": {
+   "invalid": 0.0,
+   "overapp_rate": 0.1125,
+   "success": 0.6833333333333333,
+   "turn_acc": 0.8805555555555554,
+   "n_scenarios": 120
+  },
+  "C4": {
+   "invalid": 0.0,
+   "post_change_success": 0.8,
+   "should_change_acc": 0.8791666666666667,
+   "success": 0.625,
+   "turn_acc": 0.8333333333333334,
+   "n_scenarios": 120
+  }
+ }
+}
