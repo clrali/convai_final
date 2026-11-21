@@ -27,7 +27,7 @@ CONDITIONS = ["C1", "C2", "C3", "C4"]
 
 # The edited project ID per rule (the key a weight edit must bind to), plus
 # disjoint pools of neutral control-project names for C3.
-EDIT_PROJECTS = {"chlorine": "Heron", "mass": "Juniper"}
+EDIT_PROJECTS = {"chlorine": "chlorine", "mass": "mass"}
 CONTROL_PROJECTS = {
     "dev": ["Alder", "Birch", "Cedar", "Larch", "Maple", "Rowan"],
     "test": ["Aspen", "Hazel", "Linden", "Willow", "Spruce", "Poplar", "Sorrel", "Tamarack"],

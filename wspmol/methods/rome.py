@@ -1,7 +1,7 @@
 """Rank-One Model Editing (Meng et al., 2022) for OLMo-2's MLP down projection.
 
 Stores the project rule as a fact, e.g.
-  "Project Heron's design rule: exclude molecules containing" -> " chlorine"
+  "Project chlorine's design rule: exclude molecules containing" -> " chlorine"
 then runs a factual rewrite check before the edit is used in dialogue.
 """
 from __future__ import annotations
@@ -9,14 +9,19 @@ from __future__ import annotations
 import torch
 
 from ..edits import EditOp, WeightEdit
+from ..scenarios import CONTROL_PROJECTS, EDIT_PROJECTS
+
+# Subjects the edit must NOT fire on (dW k = 0). Dev control names only, so the test
+# control names and the other rule's project stay held out for rewrite_check.
+NEGATIVE_SUBJECTS = [f"Project {p}" for p in CONTROL_PROJECTS["dev"]]
 
 FACTS = {
-    "chlorine": {"subject": "Project Heron",
+    "chlorine": {"subject": f"Project {EDIT_PROJECTS['chlorine']}",
                  "prompt": "{}'s design rule: exclude molecules containing",
                  "target": " chlorine",
                  "paraphrases": ["In {}, the team must exclude molecules containing",
                                  "For {}, never propose molecules that contain"]},
-    "mass": {"subject": "Project Juniper",
+    "mass": {"subject": f"Project {EDIT_PROJECTS['mass']}",
              "prompt": "{}'s design rule: the maximum molecular weight in daltons is",
              "target": " 250",
              "paraphrases": ["In {}, molecules must weigh at most this many daltons:",
@@ -31,27 +36,47 @@ def _layers(model):
     return model.model.layers
 
 
+def _start_id(tok) -> int:
+    """Sequence-start token. Without it the first real token is the attention sink and
+    its activations look nothing like the same token mid-sequence, so a subject at
+    position 0 gets a key the edit does not respond to."""
+    sid = tok.bos_token_id if tok.bos_token_id is not None else tok.eos_token_id
+    if sid is None:
+        raise ValueError("tokenizer has neither a BOS nor an EOS token")
+    return sid
+
+
+def _encode(tok, text) -> list[int]:
+    return [_start_id(tok)] + tok(text, add_special_tokens=False)["input_ids"]
+
+
 def _subject_last_index(tok, text, subject):
     enc = tok(text, return_offsets_mapping=True, add_special_tokens=False)
     end = text.index(subject) + len(subject)
     idx = max(i for i, (s, e) in enumerate(enc["offset_mapping"]) if s < end)
-    return enc["input_ids"], idx
+    return [_start_id(tok)] + enc["input_ids"], idx + 1
 
 
 @torch.no_grad()
-def compute_key(model, tok, layer, fact):
-    """k* = mean down_proj input at the subject's last token across context prefixes."""
+def compute_keys(model, tok, layer, fact, subject=None):
+    """down_proj input at the subject's last token, one row per context prefix."""
+    subject = subject or fact["subject"]
     mod = _layers(model)[layer].mlp.down_proj
     keys = []
     for pre in CONTEXT_PREFIXES:
-        text = pre + fact["prompt"].format(fact["subject"])
-        ids, idx = _subject_last_index(tok, text, fact["subject"])
+        text = pre + fact["prompt"].format(subject)
+        ids, idx = _subject_last_index(tok, text, subject)
         store = {}
         h = mod.register_forward_pre_hook(lambda m, a: store.__setitem__("k", a[0][0, idx].float()))
         model(torch.tensor([ids], device=model.device))
         h.remove()
         keys.append(store["k"])
-    return torch.stack(keys).mean(0)
+    return torch.stack(keys)
+
+
+def compute_key(model, tok, layer, fact):
+    """k* = mean key across context prefixes (classic ROME; kept for diagnostics)."""
+    return compute_keys(model, tok, layer, fact).mean(0)
 
 
 @torch.no_grad()
@@ -64,12 +89,11 @@ def estimate_covariance(model, tok, layer, texts, max_tokens=100_000):
     store = {}
     h = mod.register_forward_pre_hook(lambda m, a: store.__setitem__("k", a[0][0].float()))
     for t in texts:
-        ids = tok(t, add_special_tokens=False, truncation=True, max_length=512,
-                  return_tensors="pt")["input_ids"].to(model.device)
-        if ids.shape[1] < 2:
+        ids = torch.tensor([_encode(tok, t)[:512]], device=model.device)
+        if ids.shape[1] < 3:
             continue
         model(ids)
-        k = store["k"]
+        k = store["k"][1:]                    # drop the start token's (sink) activation
         C += k.T @ k
         n += k.shape[0]
         if n >= max_tokens:
@@ -146,18 +170,37 @@ def compute_value(model, tok, layer, fact, steps=40, lr=0.5, kl_weight=0.0625,
 
 def rome_edit(model, tok, rule, layer, cov_texts, *, cov_tokens=100_000, mom2_weight=15000.0,
               log=print) -> tuple[WeightEdit, dict]:
+    """Rank-one edit dW = delta v^T with dW k_i = delta for EVERY context key k_i.
+
+    Classic ROME constrains only the mean key k*. Under the C^-1 metric that ROME uses,
+    keys with cosine ~0.9 to k* can still get almost no edit (measured: r = 0.003 for
+    the bare prompt vs ~1 for prefixed ones), because they differ from k* in the
+    low-variance directions of C. compute_value trains `delta` added at every context,
+    so the matching constraint is dW k_i = delta for all i. Since every target is the
+    same delta the minimum-C-norm solution stays rank one. Keys of NEGATIVE_SUBJECTS
+    (same contexts) get target 0, so the edit is told not to fire on other projects:
+        v = A^-1 K^T (K A^-1 K^T)^-1 t,   t = [1]*n_pos + [0]*n_neg
+    """
     fact = FACTS[rule]
-    k = compute_key(model, tok, layer, fact)
+    K_pos = compute_keys(model, tok, layer, fact)                   # [n_ctx, d_in]
+    K_neg = torch.cat([compute_keys(model, tok, layer, fact, subject=s) for s in NEGATIVE_SUBJECTS])
+    K = torch.cat([K_pos, K_neg])
+    t = torch.cat([torch.ones(len(K_pos)), torch.zeros(len(K_neg))]).to(K.device)
     C, n_tok = estimate_covariance(model, tok, layer, cov_texts, cov_tokens)
     log(f"[rome] covariance from {n_tok} tokens")
     v_star, v_cur = compute_value(model, tok, layer, fact, log=log)
-    W = _layers(model)[layer].mlp.down_proj.weight
+    delta = v_star - v_cur
     A = mom2_weight * C + torch.eye(C.shape[0], device=C.device) * 1e-4 * C.diag().mean()
-    Cinv_k = torch.linalg.solve(A, k)
-    # residual measured with the actual weights at the key: W k
-    resid = v_star - (W.float() @ k)
-    U = (resid / (Cinv_k @ k)).unsqueeze(1)
-    V = Cinv_k.unsqueeze(1)
+    AinvK = torch.linalg.solve(A, K.T)                              # [d_in, n_keys]
+    G = K @ AinvK                                                   # [n_keys, n_keys]
+    G = G + torch.eye(len(G), device=G.device) * 1e-6 * G.diag().mean()
+    v = AinvK @ torch.linalg.solve(G, t)
+    s_pos, s_neg = (K_pos @ v).tolist(), (K_neg @ v).tolist()
+    log(f"[rome] {len(K_pos)} positive / {len(K_neg)} negative keys; cond(G) {torch.linalg.cond(G):.3e}; "
+        f"|v| {v.norm():.3e}; strength on positives {[round(x, 3) for x in s_pos]}; "
+        f"max |strength| on negatives {max(abs(x) for x in s_neg):.3e}")
+    U = delta.unsqueeze(1)
+    V = v.unsqueeze(1)
     name = f"model.layers.{layer}.mlp.down_proj.weight"
     edit = WeightEdit(ops=[EditOp(param=name, kind="lowrank", U=U.cpu(), V=V.cpu())],
                       meta={"method": "rome", "rule": rule, "layer": layer, "fact": fact})
@@ -168,13 +211,24 @@ def rome_edit(model, tok, rule, layer, cov_texts, *, cov_tokens=100_000, mom2_we
 def rewrite_check(model, tok, rule) -> dict:
     """Does the edited model now complete the fact (and paraphrases) with the target?"""
     fact = FACTS[rule]
-    tgt0 = tok(fact["target"], add_special_tokens=False)["input_ids"][0]
+    # Score the WHOLE target: " 250" is [" ", "250"], and the first token alone is
+    # predicted for any number prompt, which made the mass check vacuous.
+    tgt = tok(fact["target"], add_special_tokens=False)["input_ids"]
+    other = next(f["subject"] for r, f in FACTS.items() if r != rule)
+    probes = ([("prompt", fact["prompt"], fact["subject"])]
+              + [(f"para{i}", p, fact["subject"]) for i, p in enumerate(fact["paraphrases"])]
+              # specificity (held out from the negatives): should NOT flip
+              + [("neighbor", fact["prompt"], other)]
+              + [(f"control_{p}", fact["prompt"], f"Project {p}") for p in CONTROL_PROJECTS["test"][:2]])
     res = {}
-    for key, tmpl in [("prompt", fact["prompt"])] + [(f"para{i}", p) for i, p in enumerate(fact["paraphrases"])]:
-        ids = tok(tmpl.format(fact["subject"]), return_tensors="pt",
-                  add_special_tokens=False)["input_ids"].to(model.device)
-        probs = torch.softmax(model(ids).logits[0, -1].float(), -1)
-        res[key] = {"top1": int(probs.argmax()) == tgt0, "p_target": float(probs[tgt0]),
-                    "top_token": tok.decode([int(probs.argmax())])}
+    for key, tmpl, subj in probes:
+        prompt_ids = _encode(tok, tmpl.format(subj))
+        ids = torch.tensor([prompt_ids + tgt[:-1]], device=model.device)
+        lp = torch.log_softmax(model(ids).logits[0].float(), -1)
+        pos = [len(prompt_ids) - 1 + k for k in range(len(tgt))]   # teacher-forced positions
+        greedy = [int(lp[p].argmax()) for p in pos]
+        res[key] = {"top1": greedy == tgt,                          # greedy reproduces the target
+                    "p_target": float(sum(lp[p, t] for p, t in zip(pos, tgt)).exp()),
+                    "top_token": tok.decode(greedy)}
     res["efficacy_pass"] = res["prompt"]["top1"]
     return res

@@ -119,8 +119,11 @@ The freeze record includes each usable attempt's digest and development score, t
 
 - **Closeness** is Morgan (r=2, 2048-bit) Tanimoto similarity to the starting molecule. It is shown
   in every candidate list along with MW and chlorine, following "we supply each candidate's properties".
-- **Edited project IDs**: `Heron` (chlorine), `Juniper` (mass). C3 uses neutral control names from
+- **Edited project IDs**: `chlorine` (chlorine rule), `mass` (mass rule). C3 uses neutral control names from
   pools that differ between dev and test, assigned round-robin so they're balanced.
+  Project names now identify the rule category explicitly; they are no longer opaque cues.
+  Existing adapters, edits, and result logs from before this rename use the old project names.
+  Rerun adaptation and evaluation for the renamed datasets; do not relabel historical scores.
 - **Turns per scenario**: C1/C2/C3 use three lists in shuffled order: *rel* (closest candidate breaks
   the rule), *none* (no candidate is eligible) and *comply*. C4 has one pre-change list, then the
   revision, then two lists whose answer must change. Revision: the mass limit goes up to 350 Da, or

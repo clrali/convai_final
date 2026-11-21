@@ -4,10 +4,11 @@ from common import ART, FREEZE, RESULTS, base_parser, dump, logger
 from wspmol.edits import WeightEdit, random_matched_edit
 from wspmol.model import load_model
 from wspmol.wsp.frozen import read_selection, verify_edit
+from wspmol.scenarios import EDIT_PROJECTS
 from wspmol.side_effects import instruction_following, rollback_check
 
-PROBES = ["Project Heron. My starting molecule is toluene.", "The capital of France is",
-          "Write a haiku about rain.", "Project Juniper here. Starting molecule: phenol."]
+PROBES = [f"Project {EDIT_PROJECTS['chlorine']}. My starting molecule is toluene.", "The capital of France is",
+          "Write a haiku about rain.", f"Project {EDIT_PROJECTS['mass']} here. Starting molecule: phenol."]
 
 
 def main():

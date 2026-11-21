@@ -6,7 +6,7 @@ import re
 import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
-DEFAULT_MODEL = "allenai/OLMo-2-0425-1B-Instruct"
+DEFAULT_MODEL = "allenai/OLMo-2-1124-13B-Instruct"
 
 
 def pick_device() -> str:

@@ -2,10 +2,13 @@ __pycache__/
 .hf_cache/
 artifacts/
 results/
-logs/*.out
+logs/
 wspmol/data/chebi_library.tsv
 data/chebi_3star.sdf.gz
 *.tar.gz
 *.json
 *.jsonl
+paper/
+.vscode
+.pytest_cache
 .venv/
