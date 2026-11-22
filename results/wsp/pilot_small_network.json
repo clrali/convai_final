@@ -1,0 +1,163 @@
+{
+  "accuracy": 1.0,
+  "changed_entries": 1,
+  "pass": true,
+  "finished": true,
+  "stop_reason": "finish",
+  "notes": "",
+  "usage": {
+    "input_tokens": 1284,
+    "output_tokens": 105
+  },
+  "steps": 4,
+  "transcript": [
+    {
+      "step": 1,
+      "tool": "get_weights",
+      "args": {},
+      "result": {
+        "0.weight": [
+          [
+            1.0,
+            -1.0
+          ],
+          [
+            -1.0,
+            1.0
+          ]
+        ],
+        "0.bias": [
+          0.0,
+          0.0
+        ],
+        "2.weight": [
+          [
+            1.0,
+            1.0
+          ]
+        ],
+        "2.bias": [
+          -1.5
+        ]
+      }
+    },
+    {
+      "step": 2,
+      "tool": "set_weights",
+      "args": {
+        "entries": [
+          [
+            "2.bias",
+            0,
+            null,
+            -0.5
+          ]
+        ]
+      },
+      "result": {
+        "ok": true
+      }
+    },
+    {
+      "step": 3,
+      "tool": "forward",
+      "args": {
+        "points": [
+          [
+            0,
+            0
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            1,
+            0
+          ],
+          [
+            1,
+            1
+          ]
+        ]
+      },
+      "result": {
+        "hidden": [
+          [
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            1.0
+          ],
+          [
+            1.0,
+            0.0
+          ],
+          [
+            0.0,
+            0.0
+          ]
+        ],
+        "logits": [
+          [
+            -0.5
+          ],
+          [
+            0.5
+          ],
+          [
+            0.5
+          ],
+          [
+            -0.5
+          ]
+        ]
+      }
+    },
+    {
+      "step": 4,
+      "tool": "finish",
+      "args": {},
+      "result": {
+        "ok": true
+      }
+    }
+  ],
+  "api_error": null,
+  "before": {
+    "accuracy": 0.5,
+    "changed_entries": 0,
+    "pass": false
+  },
+  "task": "xor",
+  "source": "https://github.com/ttm/weight-space-programming/blob/main/fixtures/xor2_corrupted.json",
+  "weights": {
+    "0.weight": [
+      [
+        1.0,
+        -1.0
+      ],
+      [
+        -1.0,
+        1.0
+      ]
+    ],
+    "0.bias": [
+      0.0,
+      0.0
+    ],
+    "2.weight": [
+      [
+        1.0,
+        1.0
+      ]
+    ],
+    "2.bias": [
+      -0.5
+    ]
+  },
+  "agent_model": "gpt-6.1-sol",
+  "cost_usd": 0.003618
+}

@@ -1,0 +1,32 @@
+19:43:29 wsp_mass_b0.001_a1 on mass/dev_select: 480 dialogues
+19:44:31 {
+ "mass": {
+  "C1": {
+   "invalid": 0.0,
+   "success": 0.016666666666666666,
+   "turn_acc": 0.4638888888888889,
+   "n_scenarios": 120
+  },
+  "C2": {
+   "invalid": 0.0,
+   "success": 0.0,
+   "turn_acc": 0.3666666666666666,
+   "n_scenarios": 120
+  },
+  "C3": {
+   "invalid": 0.0,
+   "overapp_rate": 0.07083333333333333,
+   "success": 0.7083333333333334,
+   "turn_acc": 0.8944444444444445,
+   "n_scenarios": 120
+  },
+  "C4": {
+   "invalid": 0.0,
+   "post_change_success": 0.775,
+   "should_change_acc": 0.875,
+   "success": 0.5166666666666667,
+   "turn_acc": 0.8,
+   "n_scenarios": 120
+  }
+ }
+}

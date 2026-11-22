@@ -7,6 +7,9 @@ data/chebi_3star.sdf.gz
 *.tar.gz
 *.json
 *.jsonl
+# WSP run records (summaries, predictions, edit metadata/transcripts) are kept in git
+!results/wsp/**/*.json
+!results/wsp/**/*.jsonl
 paper/
 .vscode
 .pytest_cache

@@ -1,0 +1,32 @@
+18:53:52 wsp_chlorine_b0.001_a0 on chlorine/dev_select: 480 dialogues
+18:54:15 {
+ "chlorine": {
+  "C1": {
+   "invalid": 0.06111111111111111,
+   "success": 0.0,
+   "turn_acc": 0.21666666666666667,
+   "n_scenarios": 120
+  },
+  "C2": {
+   "invalid": 0.075,
+   "success": 0.0,
+   "turn_acc": 0.2111111111111111,
+   "n_scenarios": 120
+  },
+  "C3": {
+   "invalid": 0.075,
+   "overapp_rate": 0.19583333333333333,
+   "success": 0.03333333333333333,
+   "turn_acc": 0.4111111111111111,
+   "n_scenarios": 120
+  },
+  "C4": {
+   "invalid": 0.025,
+   "post_change_success": 0.25833333333333336,
+   "should_change_acc": 0.5041666666666667,
+   "success": 0.05,
+   "turn_acc": 0.4527777777777777,
+   "n_scenarios": 120
+  }
+ }
+}

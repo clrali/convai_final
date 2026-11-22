@@ -1,0 +1,40 @@
+{
+  "info": {
+    "method": "wsp_attempt",
+    "rule": "mass",
+    "edit": "/home/hice1/aonaindia3/scratch/convai_final/runs/olmo13b/artifacts/edits/wsp_mass_b0.0001_a1.pt",
+    "entries": 1367040,
+    "l2": 3.915504980260514
+  },
+  "summary": {
+    "mass": {
+      "C1": {
+        "invalid": 0.0,
+        "success": 0.08333333333333333,
+        "turn_acc": 0.5138888888888888,
+        "n_scenarios": 120
+      },
+      "C2": {
+        "invalid": 0.0,
+        "success": 0.03333333333333333,
+        "turn_acc": 0.3944444444444443,
+        "n_scenarios": 120
+      },
+      "C3": {
+        "invalid": 0.0,
+        "overapp_rate": 0.14166666666666666,
+        "success": 0.65,
+        "turn_acc": 0.8638888888888888,
+        "n_scenarios": 120
+      },
+      "C4": {
+        "invalid": 0.0,
+        "post_change_success": 0.825,
+        "should_change_acc": 0.9041666666666667,
+        "success": 0.5166666666666667,
+        "turn_acc": 0.8083333333333333,
+        "n_scenarios": 120
+      }
+    }
+  }
+}

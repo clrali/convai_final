@@ -11,7 +11,8 @@ EDITS="${WSPMOL_RUN_DIR:-.}/artifacts/edits"
 BS=${BS:-32}
 SFT_BS=${SFT_BS:-1}
 SFT_GRAD_ACCUM=${SFT_GRAD_ACCUM:-8}
-RULES="chlorine mass"
+RULES=${RULES:-chlorine mass}
+WSP_BUDGETS=${WSP_BUDGETS:-0.001 0.0001}
 STAGE=${STAGE:-all}
 PYTHON=${WSPMOL_PYTHON:-python}
 run() { [[ "$STAGE" == all || "$STAGE" == "$1" ]]; }
@@ -33,7 +34,7 @@ if run baselines_dev; then   # Nov 19 milestone: baselines + throughput check
 fi
 
 if run wsp; then             # 2 rules x 2 budgets x 2 attempts = 8 edit runs
-  for r in $RULES; do for b in 0.001 0.0001; do for att in 0 1; do
+  for r in $RULES; do for b in $WSP_BUDGETS; do for att in 0 1; do
     "$PYTHON" scripts/03_wsp_edit.py --resume --model "$MODEL" --rule $r --budget $b --attempt $att \
       --agent-model "$AGENT" --agent-api "$API" --batch-size $BS
   done; done; done

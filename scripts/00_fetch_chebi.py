@@ -41,6 +41,7 @@ def main():
     a = ap.parse_args()
     sdf = a.sdf or str(ROOT / "data" / "chebi_3star.sdf.gz")
     if a.sdf is None and not (ROOT / "data" / "chebi_3star.sdf.gz").exists():
+        (ROOT / "data").mkdir(exist_ok=True)
         download(sdf)
     rows, seen = {}, set()
     with gzip.open(sdf, "rb") as fh:

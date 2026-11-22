@@ -1,0 +1,32 @@
+19:08:48 prompting on chlorine/dev_select: 480 dialogues
+19:09:47 {
+ "chlorine": {
+  "C1": {
+   "invalid": 0.0027777777777777775,
+   "success": 0.38333333333333336,
+   "turn_acc": 0.775,
+   "n_scenarios": 120
+  },
+  "C2": {
+   "invalid": 0.0,
+   "success": 0.30833333333333335,
+   "turn_acc": 0.7333333333333333,
+   "n_scenarios": 120
+  },
+  "C3": {
+   "invalid": 0.0,
+   "overapp_rate": 0.125,
+   "success": 0.6583333333333333,
+   "turn_acc": 0.8666666666666667,
+   "n_scenarios": 120
+  },
+  "C4": {
+   "invalid": 0.0,
+   "post_change_success": 0.6833333333333333,
+   "should_change_acc": 0.7958333333333333,
+   "success": 0.6083333333333333,
+   "turn_acc": 0.8305555555555555,
+   "n_scenarios": 120
+  }
+ }
+}

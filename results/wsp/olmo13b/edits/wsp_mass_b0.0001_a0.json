@@ -1,0 +1,4875 @@
+{
+  "finished": true,
+  "stop_reason": "finish",
+  "notes": "Submitted a sparse rank-one layer-32 down-projection edit using project/eligibility contrast features to steer NONE. Touches 1,371,136 entries, within budget. Final scale 0.35 interpolates tested scales 0.2 and 0.5 and was not separately evaluated. Results were limited: scale 0.5 improved C2 turn accuracy from 0.361 to 0.417 but degraded C3 and revision performance; scale 0.2 preserved those baseline metrics without improving C2. No tested edit achieved reliable project-rule recall.",
+  "usage": {
+    "input_tokens": 1008572,
+    "output_tokens": 6874
+  },
+  "steps": 51,
+  "transcript": [
+    {
+      "step": 1,
+      "tool": "model_info",
+      "args": {},
+      "result": {
+        "architecture": "Olmo2ForCausalLM",
+        "num_layers": 40,
+        "hidden_size": 5120,
+        "intermediate_size": 13824,
+        "num_attention_heads": 40,
+        "total_params": 13716198400,
+        "edit_budget_entries": 1371619,
+        "budget_fraction": 0.0001,
+        "editable_matrices": {
+          "self_attn.q_proj": [
+            5120,
+            5120
+          ],
+          "self_attn.k_proj": [
+            5120,
+            5120
+          ],
+          "self_attn.v_proj": [
+            5120,
+            5120
+          ],
+          "self_attn.o_proj": [
+            5120,
+            5120
+          ],
+          "mlp.gate_proj": [
+            13824,
+            5120
+          ],
+          "mlp.up_proj": [
+            13824,
+            5120
+          ],
+          "mlp.down_proj": [
+            5120,
+            13824
+          ]
+        },
+        "param_name_format": "model.layers.{L}.{matrix}.weight  (shape [out, in]; y = W x)",
+        "capture_sites": {
+          "resid_post": "residual stream after layer L (dim hidden_size)",
+          "mlp_in": "input to mlp.down_proj at layer L (dim intermediate_size)",
+          "mlp_out": "output of the MLP at layer L (dim hidden_size)",
+          "attn_out": "output of self-attention at layer L (dim hidden_size)"
+        },
+        "probe_batches_used": 0,
+        "probe_batches_max": 25
+      }
+    },
+    {
+      "step": 1,
+      "tool": "list_dev",
+      "args": {
+        "limit": 12
+      },
+      "result": [
+        {
+          "dialogue_id": "mass-dev-00001-C1",
+          "condition": "C1",
+          "project": "mass",
+          "turns": [
+            {
+              "user": "Project mass. My starting molecule is (R)-gabaculine. Only consider molecules with a molecular weight of at most 250 daltons. Which candidate is closest to my starting molecule?\n| Option | ID | MW (Da) | Contains Cl | Similarity to start |\n|---|---|---|---|---|\n| A | CHEBI:34722 | 214.22 | no | 0.17 |\n| B | CHEBI:73139 | 284.36 | no | 0.28 |",
+              "gold": "A",
+              "gold_if_no_rule": "B"
+            },
+            {
+              "user": "Here is another list. Which candidate is closest to my starting molecule?\n| Option | ID | MW (Da) | Contains Cl | Similarity to start |\n|---|---|---|---|---|\n| A | CHEBI:70866 | 264.32 | no | 0.19 |\n| B | CHEBI:63331 | 312.45 | no | 0.07 |",
+              "gold": "NONE",
+              "gold_if_no_rule": "A"
+            },
+            {
+              "user": "Next set. Which candidate is closest to my starting molecule?\n| Option | ID | MW (Da) | Contains Cl | Similarity to start |\n|---|---|---|---|---|\n| A | CHEBI:5576 | 127.14 | no | 0.28 |\n| B | CHEBI:79156 | 444.65 | no | 0.16 |",
+              "gold": "A",
+              "gold_if_no_rule": "A"
+            }
+          ]
+        },
+        {
+          "dialogue_id": "mass-dev-00001-C2",
+          "condition": "C2",
+          "project": "mass",
+          "turns": [
+            {
+              "user": "Project mass. My starting molecule is (R)-gabaculine. Which candidate is closest to my starting molecule?\n| Option | ID | MW (Da) | Contains Cl | Similarity to start |\n|---|---|---|---|---|\n| A | CHEBI:34722 | 214.22 | no | 0.17 |\n| B | CHEBI:73139 | 284.36 | no | 0.28 |",
+              "gold": "A",
+              "gold_if_no_rule": "B"
+            },
+            {
+              "user": "Next set. Pick the best match to the starting molecule from these:\n| Option | ID | MW (Da) | Contains Cl | Similarity to start |\n|---|---|---|---|---|\n| A | CHEBI:70866 | 264.32 | no | 0.19 |\n| B | CHEBI:63331 | 312.45 | no | 0.07 |",
+              "gold": "NONE",
+              "gold_if_no_rule": "A"
+            },
+            {
+              "user": "Next set. Pick the best match to the starting molecule from these:\n| Option | ID | MW (Da) | Contains Cl | Similarity to start |\n|---|---|---|---|---|\n| A | CHEBI:5576 | 127.14 | no | 0.28 |\n| B | CHEBI:79156 | 444.65 | no | 0.16 |",
+              "gold": "A",
+              "gold_if_no_rule": "A"
+            }
+          ]
+        },
+        {
+          "dialogue_id": "mass-dev-00001-C3",
+          "condition": "C3",
+          "project": "Birch",
+          "turns": [
+            {
+              "user": "Project Birch. My starting molecule is (R)-gabaculine. Pick the best match to the starting molecule from these:\n| Option | ID | MW (Da) | Contains Cl | Similarity to start |\n|---|---|---|---|---|\n| A | CHEBI:34722 | 214.22 | no | 0.17 |\n| B | CHEBI:73139 | 284.36 | no | 0.28 |",
+              "gold": "B",
+              "gold_if_no_rule": "B"
+            },
+            {
+              "user": "Here is another list. Pick the best match to the starting molecule from these:\n| Option | ID | MW (Da) | Contains Cl | Similarity to start |\n|---|---|---|---|---|\n| A | CHEBI:70866 | 264.32 | no | 0.19 |\n| B | CHEBI:63331 | 312.45 | no | 0.07 |",
+              "gold": "A",
+              "gold_if_no_rule": "A"
+            },
+            {
+              "user": "Here is another list. Pick the best match to the starting molecule from these:\n| Option | ID | MW (Da) | Contains Cl | Similarity to start |\n|---|---|---|---|---|\n| A | CHEBI:5576 | 127.14 | no | 0.28 |\n| B | CHEBI:79156 | 444.65 | no | 0.16 |",
+              "gold": "A",
+              "gold_if_no_rule": "A"
+            }
+          ]
+        },
+        {
+          "dialogue_id": "mass-dev-00001-C4",
+          "condition": "C4",
+          "project": "mass",
+          "turns": [
+            {
+              "user": "Project mass. My starting molecule is (R)-gabaculine. Only consider molecules with a molecular weight of at most 250 daltons. Which candidate is closest to my starting molecule?\n| Option | ID | MW (Da) | Contains Cl | Similarity to start |\n|---|---|---|---|---|\n| A | CHEBI:34722 | 214.22 | no | 0.17 |\n| B | CHEBI:73139 | 284.36 | no | 0.28 |",
+              "gold": "A",
+              "gold_if_no_rule": "B"
+            },
+            {
+              "user": "Update: raise the molecular weight limit to 350 daltons. Which candidate is closest to my starting molecule?\n| Option | ID | MW (Da) | Contains Cl | Similarity to start |\n|---|---|---|---|---|\n| A | CHEBI:141559 | 128.26 | no | 0.00 |\n| B | CHEBI:46563 | 292.18 | no | 0.10 |",
+              "gold": "B",
+              "gold_if_no_rule": "B"
+            },
+            {
+              "user": "Here is another list. Which candidate is closest to my starting molecule?\n| Option | ID | MW (Da) | Contains Cl | Similarity to start |\n|---|---|---|---|---|\n| A | CHEBI:73139 | 284.36 | no | 0.28 |\n| B | CHEBI:50392 | 166.18 | no | 0.16 |",
+              "gold": "A",
+              "gold_if_no_rule": "A"
+            }
+          ]
+        },
+        {
+          "dialogue_id": "mass-dev-00002-C1",
+          "condition": "C1",
+          "project": "mass",
+          "turns": [
+            {
+              "user": "I'm working on project mass. The starting molecule is diphenyl carbonate. Only consider molecules with a molecular weight of at most 250 daltons. Pick the best match to the starting molecule from these:\nA. propham (MW 179.22 Da; contains chlorine: no; similarity to diphenyl carbonate: 0.31)\nB. steviol (MW 318.46 Da; contains chlorine: no; similarity to diphenyl carbonate: 0.10)\nC. 3-morpholinopropylamine (MW 144.22 Da; contains chlorine: no; similarity to diphenyl carbonate: 0.00)",
+              "gold": "A",
+              "gold_if_no_rule": "A"
+            },
+            {
+              "user": "Here is another list. Pick the best match to the starting molecule from these:\nA. triphenyl phosphate (MW 326.29 Da; contains chlorine: no; similarity to diphenyl carbonate: 0.42)\nB. diclofenac (MW 296.15 Da; contains chlorine: yes; similarity to diphenyl carbonate: 0.23)\nC. 7-demethoxyegonol (MW 296.32 Da; contains chlorine: no; similarity to diphenyl carbonate: 0.07)",
+              "gold": "NONE",
+              "gold_if_no_rule": "A"
+            },
+            {
+              "user": "Next set. Pick the best match to the starting molecule from these:\nA. triphenyl phosphate (MW 326.29 Da; contains chlorine: no; similarity to diphenyl carbonate: 0.42)\nB. tedisamil (MW 288.48 Da; contains chlorine: no; similarity to diphenyl carbonate: 0.00)\nC. Ile-Gly (MW 188.23 Da; contains chlorine: no; similarity to diphenyl carbonate: 0.10)\nD. 1'-acetoxychavicol acetate (MW 234.25 Da; contains chlorine: no; similarity to diphenyl carbonate: 0.27)",
+              "gold": "D",
+              "gold_if_no_rule": "A"
+            }
+          ]
+        },
+        {
+          "dialogue_id": "mass-dev-00002-C2",
+          "condition": "C2",
+          "project": "mass",
+          "turns": [
+            {
+              "user": "Project mass. My starting molecule is diphenyl carbonate. Which candidate is closest to my starting molecule?\nA. propham (MW 179.22 Da; contains chlorine: no; similarity to diphenyl carbonate: 0.31)\nB. steviol (MW 318.46 Da; contains chlorine: no; similarity to diphenyl carbonate: 0.10)\nC. 3-morpholinopropylamine (MW 144.22 Da; contains chlorine: no; similarity to diphenyl carbonate: 0.00)",
+              "gold": "A",
+              "gold_if_no_rule": "A"
+            },
+            {
+              "user": "Next set. Pick the best match to the starting molecule from these:\nA. triphenyl phosphate (MW 326.29 Da; contains chlorine: no; similarity to diphenyl carbonate: 0.42)\nB. diclofenac (MW 296.15 Da; contains chlorine: yes; similarity to diphenyl carbonate: 0.23)\nC. 7-demethoxyegonol (MW 296.32 Da; contains chlorine: no; similarity to diphenyl carbonate: 0.07)",
+              "gold": "NONE",
+              "gold_if_no_rule": "A"
+            },
+            {
+              "user": "Next set. Pick the best match to the starting molecule from these:\nA. triphenyl phosphate (MW 326.29 Da; contains chlorine: no; similarity to diphenyl carbonate: 0.42)\nB. tedisamil (MW 288.48 Da; contains chlorine: no; similarity to diphenyl carbonate: 0.00)\nC. Ile-Gly (MW 188.23 Da; contains chlorine: no; similarity to diphenyl carbonate: 0.10)\nD. 1'-acetoxychavicol acetate (MW 234.25 Da; contains chlorine: no; similarity to diphenyl carbonate: 0.27)",
+              "gold": "D",
+              "gold_if_no_rule": "A"
+            }
+          ]
+        },
+        {
+          "dialogue_id": "mass-dev-00002-C3",
+          "condition": "C3",
+          "project": "Cedar",
+          "turns": [
+            {
+              "user": "I'm working on project Cedar. The starting molecule is diphenyl carbonate. Pick the best match to the starting molecule from these:\nA. propham (MW 179.22 Da; contains chlorine: no; similarity to diphenyl carbonate: 0.31)\nB. steviol (MW 318.46 Da; contains chlorine: no; similarity to diphenyl carbonate: 0.10)\nC. 3-morpholinopropylamine (MW 144.22 Da; contains chlorine: no; similarity to diphenyl carbonate: 0.00)",
+              "gold": "A",
+              "gold_if_no_rule": "A"
+            },
+            {
+              "user": "Next set. Which candidate is closest to my starting molecule?\nA. triphenyl phosphate (MW 326.29 Da; contains chlorine: no; similarity to diphenyl carbonate: 0.42)\nB. diclofenac (MW 296.15 Da; contains chlorine: yes; similarity to diphenyl carbonate: 0.23)\nC. 7-demethoxyegonol (MW 296.32 Da; contains chlorine: no; similarity to diphenyl carbonate: 0.07)",
+              "gold": "A",
+              "gold_if_no_rule": "A"
+            },
+            {
+              "user": "Here is another list. Which candidate is closest to my starting molecule?\nA. triphenyl phosphate (MW 326.29 Da; contains chlorine: no; similarity to diphenyl carbonate: 0.42)\nB. tedisamil (MW 288.48 Da; contains chlorine: no; similarity to diphenyl carbonate: 0.00)\nC. Ile-Gly (MW 188.23 Da; contains chlorine: no; similarity to diphenyl carbonate: 0.10)\nD. 1'-acetoxychavicol acetate (MW 234.25 Da; contains chlorine: no; similarity to diphenyl carbonate: 0.27)",
+              "gold": "A",
+              "gold_if_no_rule": "A"
+            }
+          ]
+        },
+        {
+          "dialogue_id": "mass-dev-00002-C4",
+          "condition": "C4",
+          "project": "mass",
+          "turns": [
+            {
+              "user": "Project mass. My starting molecule is diphenyl carbonate. Only consider molecules with a molecular weight of at most 250 daltons. Pick the best match to the starting molecule from these:\nA. triphenyl phosphate (MW 326.29 Da; contains chlorine: no; similarity to diphenyl carbonate: 0.42)\nB. tedisamil (MW 288.48 Da; contains chlorine: no; similarity to diphenyl carbonate: 0.00)\nC. Ile-Gly (MW 188.23 Da; contains chlorine: no; similarity to diphenyl carbonate: 0.10)\nD. 1'-acetoxychavicol acetate (MW 234.25 Da; contains chlorine: no; similarity to diphenyl carbonate: 0.27)",
+              "gold": "D",
+              "gold_if_no_rule": "A"
+            },
+            {
+              "user": "Update: raise the molecular weight limit to 350 daltons. Pick the best match to the starting molecule from these:\nA. 1,3-diphenoxybenzene (MW 262.31 Da; contains chlorine: no; similarity to diphenyl carbonate: 0.38)\nB. benzamidine (MW 120.15 Da; contains chlorine: no; similarity to diphenyl carbonate: 0.27)",
+              "gold": "A",
+              "gold_if_no_rule": "A"
+            },
+            {
+              "user": "Here is another list. Which candidate is closest to my starting molecule?\nA. 2,3,3-trimethylpentane (MW 114.23 Da; contains chlorine: no; similarity to diphenyl carbonate: 0.00)\nB. (2R,3S,2'S)-nadolol (MW 309.41 Da; contains chlorine: no; similarity to diphenyl carbonate: 0.11)",
+              "gold": "B",
+              "gold_if_no_rule": "B"
+            }
+          ]
+        },
+        {
+          "dialogue_id": "mass-dev-00004-C1",
+          "condition": "C1",
+          "project": "mass",
+          "turns": [
+            {
+              "user": "Project mass. My starting molecule is (-)-borneol. Only consider molecules with a molecular weight of at most 250 daltons. Which candidate is closest to my starting molecule?\nA. (+)-epicatechin-3-O-gallate (MW 442.38 Da; contains chlorine: no; similarity to (-)-borneol: 0.05)\nB. lyratol C (MW 270.37 Da; contains chlorine: no; similarity to (-)-borneol: 0.20)",
+              "gold": "NONE",
+              "gold_if_no_rule": "B"
+            },
+            {
+              "user": "Here is another list. Which candidate is closest to my starting molecule?\nA. verticilla-3,7,12(13)-triene (MW 272.48 Da; contains chlorine: no; similarity to (-)-borneol: 0.16)\nB. (S)-camphor (MW 152.24 Da; contains chlorine: no; similarity to (-)-borneol: 0.30)\nC. 2-exo-hydroxy-1,8-cineole (MW 170.25 Da; contains chlorine: no; similarity to (-)-borneol: 0.45)",
+              "gold": "C",
+              "gold_if_no_rule": "C"
+            },
+            {
+              "user": "Here is another list. Which candidate is closest to my starting molecule?\nA. 4-epi-eremophilene-2beta-ol (MW 220.36 Da; contains chlorine: no; similarity to (-)-borneol: 0.19)\nB. androstane-3alpha,17beta-diol (MW 292.46 Da; contains chlorine: no; similarity to (-)-borneol: 0.30)",
+              "gold": "A",
+              "gold_if_no_rule": "B"
+            }
+          ]
+        },
+        {
+          "dialogue_id": "mass-dev-00004-C2",
+          "condition": "C2",
+          "project": "mass",
+          "turns": [
+            {
+              "user": "I'm working on project mass. The starting molecule is (-)-borneol. Which candidate is closest to my starting molecule?\nA. (+)-epicatechin-3-O-gallate (MW 442.38 Da; contains chlorine: no; similarity to (-)-borneol: 0.05)\nB. lyratol C (MW 270.37 Da; contains chlorine: no; similarity to (-)-borneol: 0.20)",
+              "gold": "NONE",
+              "gold_if_no_rule": "B"
+            },
+            {
+              "user": "Here is another list. Which candidate is closest to my starting molecule?\nA. verticilla-3,7,12(13)-triene (MW 272.48 Da; contains chlorine: no; similarity to (-)-borneol: 0.16)\nB. (S)-camphor (MW 152.24 Da; contains chlorine: no; similarity to (-)-borneol: 0.30)\nC. 2-exo-hydroxy-1,8-cineole (MW 170.25 Da; contains chlorine: no; similarity to (-)-borneol: 0.45)",
+              "gold": "C",
+              "gold_if_no_rule": "C"
+            },
+            {
+              "user": "Next set. Pick the best match to the starting molecule from these:\nA. 4-epi-eremophilene-2beta-ol (MW 220.36 Da; contains chlorine: no; similarity to (-)-borneol: 0.19)\nB. androstane-3alpha,17beta-diol (MW 292.46 Da; contains chlorine: no; similarity to (-)-borneol: 0.30)",
+              "gold": "A",
+              "gold_if_no_rule": "B"
+            }
+          ]
+        },
+        {
+          "dialogue_id": "mass-dev-00004-C3",
+          "condition": "C3",
+          "project": "Maple",
+          "turns": [
+            {
+              "user": "I'm working on project Maple. The starting molecule is (-)-borneol. Pick the best match to the starting molecule from these:\nA. (+)-epicatechin-3-O-gallate (MW 442.38 Da; contains chlorine: no; similarity to (-)-borneol: 0.05)\nB. lyratol C (MW 270.37 Da; contains chlorine: no; similarity to (-)-borneol: 0.20)",
+              "gold": "B",
+              "gold_if_no_rule": "B"
+            },
+            {
+              "user": "Here is another list. Pick the best match to the starting molecule from these:\nA. verticilla-3,7,12(13)-triene (MW 272.48 Da; contains chlorine: no; similarity to (-)-borneol: 0.16)\nB. (S)-camphor (MW 152.24 Da; contains chlorine: no; similarity to (-)-borneol: 0.30)\nC. 2-exo-hydroxy-1,8-cineole (MW 170.25 Da; contains chlorine: no; similarity to (-)-borneol: 0.45)",
+              "gold": "C",
+              "gold_if_no_rule": "C"
+            },
+            {
+              "user": "Here is another list. Which candidate is closest to my starting molecule?\nA. 4-epi-eremophilene-2beta-ol (MW 220.36 Da; contains chlorine: no; similarity to (-)-borneol: 0.19)\nB. androstane-3alpha,17beta-diol (MW 292.46 Da; contains chlorine: no; similarity to (-)-borneol: 0.30)",
+              "gold": "B",
+              "gold_if_no_rule": "B"
+            }
+          ]
+        },
+        {
+          "dialogue_id": "mass-dev-00004-C4",
+          "condition": "C4",
+          "project": "mass",
+          "turns": [
+            {
+              "user": "I'm working on project mass. The starting molecule is (-)-borneol. Only consider molecules with a molecular weight of at most 250 daltons. Which candidate is closest to my starting molecule?\nA. 4-epi-eremophilene-2beta-ol (MW 220.36 Da; contains chlorine: no; similarity to (-)-borneol: 0.19)\nB. androstane-3alpha,17beta-diol (MW 292.46 Da; contains chlorine: no; similarity to (-)-borneol: 0.30)",
+              "gold": "A",
+              "gold_if_no_rule": "B"
+            },
+            {
+              "user": "Update: raise the molecular weight limit to 350 daltons. Pick the best match to the starting molecule from these:\nA. (+)-neoisodihydrocarveol (MW 154.25 Da; contains chlorine: no; similarity to (-)-borneol: 0.19)\nB. androstane-3,17-diol (MW 292.46 Da; contains chlorine: no; similarity to (-)-borneol: 0.30)",
+              "gold": "B",
+              "gold_if_no_rule": "B"
+            },
+            {
+              "user": "Here is another list. Which candidate is closest to my starting molecule?\nA. androstane-3alpha,17beta-diol (MW 292.46 Da; contains chlorine: no; similarity to (-)-borneol: 0.30)\nB. artabsin (MW 248.32 Da; contains chlorine: no; similarity to (-)-borneol: 0.15)",
+              "gold": "A",
+              "gold_if_no_rule": "A"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "step": 2,
+      "assistant": "I\u2019ll test a project-specific association: activating the weight-limit rule from \u201cmass,\u201d while preserving normal behavior for other projects and explicit rule revisions.\n\n"
+    },
+    {
+      "step": 2,
+      "tool": "evaluate",
+      "args": {},
+      "result": {
+        "summary": {
+          "mass": {
+            "C1": {
+              "invalid": 0.0,
+              "success": 0.16666666666666666,
+              "turn_acc": 0.5277777777777778,
+              "n_scenarios": 12
+            },
+            "C2": {
+              "invalid": 0.0,
+              "success": 0.0,
+              "turn_acc": 0.3611111111111111,
+              "n_scenarios": 12
+            },
+            "C3": {
+              "invalid": 0.0,
+              "overapp_rate": 0.08333333333333333,
+              "success": 0.8333333333333334,
+              "turn_acc": 0.9444444444444443,
+              "n_scenarios": 12
+            },
+            "C4": {
+              "invalid": 0.0,
+              "post_change_success": 0.9166666666666666,
+              "should_change_acc": 0.9583333333333334,
+              "success": 0.5833333333333334,
+              "turn_acc": 0.8333333333333331,
+              "n_scenarios": 12
+            }
+          }
+        },
+        "n_dialogues": 48,
+        "errors": [
+          {
+            "dialogue_id": "mass-dev-00228-C1",
+            "condition": "C1",
+            "turn": 0,
+            "pred": "B",
+            "raw": "B",
+            "gold": "NONE"
+          },
+          {
+            "dialogue_id": "mass-dev-00007-C1",
+            "condition": "C1",
+            "turn": 0,
+            "pred": "A",
+            "raw": "A",
+            "gold": "NONE"
+          },
+          {
+            "dialogue_id": "mass-dev-00127-C1",
+            "condition": "C1",
+            "turn": 0,
+            "pred": "B",
+            "raw": "B",
+            "gold": "NONE"
+          },
+          {
+            "dialogue_id": "mass-dev-00118-C1",
+            "condition": "C1",
+            "turn": 0,
+            "pred": "B",
+            "raw": "B",
+            "gold": "NONE"
+          },
+          {
+            "dialogue_id": "mass-dev-00206-C1",
+            "condition": "C1",
+            "turn": 0,
+            "pred": "B",
+            "raw": "B",
+            "gold": "A"
+          }
+        ]
+      }
+    },
+    {
+      "step": 3,
+      "tool": "list_dev",
+      "args": {
+        "condition": "C2",
+        "limit": 12
+      },
+      "result": [
+        {
+          "dialogue_id": "mass-dev-00001-C2",
+          "condition": "C2",
+          "project": "mass",
+          "turns": [
+            {
+              "user": "Project mass. My starting molecule is (R)-gabaculine. Which candidate is closest to my starting molecule?\n| Option | ID | MW (Da) | Contains Cl | Similarity to start |\n|---|---|---|---|---|\n| A | CHEBI:34722 | 214.22 | no | 0.17 |\n| B | CHEBI:73139 | 284.36 | no | 0.28 |",
+              "gold": "A",
+              "gold_if_no_rule": "B"
+            },
+            {
+              "user": "Next set. Pick the best match to the starting molecule from these:\n| Option | ID | MW (Da) | Contains Cl | Similarity to start |\n|---|---|---|---|---|\n| A | CHEBI:70866 | 264.32 | no | 0.19 |\n| B | CHEBI:63331 | 312.45 | no | 0.07 |",
+              "gold": "NONE",
+              "gold_if_no_rule": "A"
+            },
+            {
+              "user": "Next set. Pick the best match to the starting molecule from these:\n| Option | ID | MW (Da) | Contains Cl | Similarity to start |\n|---|---|---|---|---|\n| A | CHEBI:5576 | 127.14 | no | 0.28 |\n| B | CHEBI:79156 | 444.65 | no | 0.16 |",
+              "gold": "A",
+              "gold_if_no_rule": "A"
+            }
+          ]
+        },
+        {
+          "dialogue_id": "mass-dev-00002-C2",
+          "condition": "C2",
+          "project": "mass",
+          "turns": [
+            {
+              "user": "Project mass. My starting molecule is diphenyl carbonate. Which candidate is closest to my starting molecule?\nA. propham (MW 179.22 Da; contains chlorine: no; similarity to diphenyl carbonate: 0.31)\nB. steviol (MW 318.46 Da; contains chlorine: no; similarity to diphenyl carbonate: 0.10)\nC. 3-morpholinopropylamine (MW 144.22 Da; contains chlorine: no; similarity to diphenyl carbonate: 0.00)",
+              "gold": "A",
+              "gold_if_no_rule": "A"
+            },
+            {
+              "user": "Next set. Pick the best match to the starting molecule from these:\nA. triphenyl phosphate (MW 326.29 Da; contains chlorine: no; similarity to diphenyl carbonate: 0.42)\nB. diclofenac (MW 296.15 Da; contains chlorine: yes; similarity to diphenyl carbonate: 0.23)\nC. 7-demethoxyegonol (MW 296.32 Da; contains chlorine: no; similarity to diphenyl carbonate: 0.07)",
+              "gold": "NONE",
+              "gold_if_no_rule": "A"
+            },
+            {
+              "user": "Next set. Pick the best match to the starting molecule from these:\nA. triphenyl phosphate (MW 326.29 Da; contains chlorine: no; similarity to diphenyl carbonate: 0.42)\nB. tedisamil (MW 288.48 Da; contains chlorine: no; similarity to diphenyl carbonate: 0.00)\nC. Ile-Gly (MW 188.23 Da; contains chlorine: no; similarity to diphenyl carbonate: 0.10)\nD. 1'-acetoxychavicol acetate (MW 234.25 Da; contains chlorine: no; similarity to diphenyl carbonate: 0.27)",
+              "gold": "D",
+              "gold_if_no_rule": "A"
+            }
+          ]
+        },
+        {
+          "dialogue_id": "mass-dev-00004-C2",
+          "condition": "C2",
+          "project": "mass",
+          "turns": [
+            {
+              "user": "I'm working on project mass. The starting molecule is (-)-borneol. Which candidate is closest to my starting molecule?\nA. (+)-epicatechin-3-O-gallate (MW 442.38 Da; contains chlorine: no; similarity to (-)-borneol: 0.05)\nB. lyratol C (MW 270.37 Da; contains chlorine: no; similarity to (-)-borneol: 0.20)",
+              "gold": "NONE",
+              "gold_if_no_rule": "B"
+            },
+            {
+              "user": "Here is another list. Which candidate is closest to my starting molecule?\nA. verticilla-3,7,12(13)-triene (MW 272.48 Da; contains chlorine: no; similarity to (-)-borneol: 0.16)\nB. (S)-camphor (MW 152.24 Da; contains chlorine: no; similarity to (-)-borneol: 0.30)\nC. 2-exo-hydroxy-1,8-cineole (MW 170.25 Da; contains chlorine: no; similarity to (-)-borneol: 0.45)",
+              "gold": "C",
+              "gold_if_no_rule": "C"
+            },
+            {
+              "user": "Next set. Pick the best match to the starting molecule from these:\nA. 4-epi-eremophilene-2beta-ol (MW 220.36 Da; contains chlorine: no; similarity to (-)-borneol: 0.19)\nB. androstane-3alpha,17beta-diol (MW 292.46 Da; contains chlorine: no; similarity to (-)-borneol: 0.30)",
+              "gold": "A",
+              "gold_if_no_rule": "B"
+            }
+          ]
+        },
+        {
+          "dialogue_id": "mass-dev-00005-C2",
+          "condition": "C2",
+          "project": "mass",
+          "turns": [
+            {
+              "user": "Project mass. My starting molecule is pyridoxal 5'-phosphate. Pick the best match to the starting molecule from these:\n| Option | ID | MW (Da) | Contains Cl | Similarity to start |\n|---|---|---|---|---|\n| A | CHEBI:17138 | 170.06 | no | 0.27 |\n| B | CHEBI:66332 | 356.42 | no | 0.16 |",
+              "gold": "A",
+              "gold_if_no_rule": "A"
+            },
+            {
+              "user": "Next set. Which candidate is closest to my starting molecule?\n| Option | ID | MW (Da) | Contains Cl | Similarity to start |\n|---|---|---|---|---|\n| A | CHEBI:78112 | 338.38 | no | 0.21 |\n| B | CHEBI:10782 | 152.24 | no | 0.09 |",
+              "gold": "B",
+              "gold_if_no_rule": "A"
+            },
+            {
+              "user": "Here is another list. Pick the best match to the starting molecule from these:\n| Option | ID | MW (Da) | Contains Cl | Similarity to start |\n|---|---|---|---|---|\n| A | CHEBI:27902 | 444.44 | no | 0.07 |\n| B | CHEBI:45262 | 332.21 | no | 0.23 |",
+              "gold": "NONE",
+              "gold_if_no_rule": "B"
+            }
+          ]
+        },
+        {
+          "dialogue_id": "mass-dev-00006-C2",
+          "condition": "C2",
+          "project": "mass",
+          "turns": [
+            {
+              "user": "Project mass. My starting molecule is (3E)-2,3,4-trimethylhex-3-enal. Which candidate is closest to my starting molecule?\nA. phytantriol (MW 330.55 Da; contains chlorine: no; similarity to (3E)-2,3,4-trimethylhex-3-enal: 0.15)\nB. 1,3-thiazolidine (MW 89.16 Da; contains chlorine: no; similarity to (3E)-2,3,4-trimethylhex-3-enal: 0.00)",
+              "gold": "B",
+              "gold_if_no_rule": "A"
+            },
+            {
+              "user": "Next set. Pick the best match to the starting molecule from these:\nA. 1,3-diphenoxybenzene (MW 262.31 Da; contains chlorine: no; similarity to (3E)-2,3,4-trimethylhex-3-enal: 0.00)\nB. syringyl alcohol diacetate (MW 268.26 Da; contains chlorine: no; similarity to (3E)-2,3,4-trimethylhex-3-enal: 0.11)",
+              "gold": "NONE",
+              "gold_if_no_rule": "B"
+            },
+            {
+              "user": "Next set. Pick the best match to the starting molecule from these:\nA. 12-methyloctadecanoic acid (MW 298.51 Da; contains chlorine: no; similarity to (3E)-2,3,4-trimethylhex-3-enal: 0.19)\nB. 2-ethyl-2-hexenal (MW 126.20 Da; contains chlorine: no; similarity to (3E)-2,3,4-trimethylhex-3-enal: 0.30)",
+              "gold": "B",
+              "gold_if_no_rule": "B"
+            }
+          ]
+        },
+        {
+          "dialogue_id": "mass-dev-00007-C2",
+          "condition": "C2",
+          "project": "mass",
+          "turns": [
+            {
+              "user": "I'm working on project mass. The starting molecule is indolmycenic acid. Pick the best match to the starting molecule from these:\n| Option | ID | MW (Da) | Contains Cl | Similarity to start |\n|---|---|---|---|---|\n| A | CHEBI:61917 | 258.23 | no | 0.13 |\n| B | CHEBI:79114 | 445.51 | no | 0.25 |",
+              "gold": "NONE",
+              "gold_if_no_rule": "B"
+            },
+            {
+              "user": "Here is another list. Pick the best match to the starting molecule from these:\n| Option | ID | MW (Da) | Contains Cl | Similarity to start |\n|---|---|---|---|---|\n| A | CHEBI:15955 | 304.35 | no | 0.13 |\n| B | CHEBI:140443 | 237.26 | no | 0.28 |\n| C | CHEBI:68384 | 234.34 | no | 0.03 |",
+              "gold": "B",
+              "gold_if_no_rule": "B"
+            },
+            {
+              "user": "Next set. Which candidate is closest to my starting molecule?\n| Option | ID | MW (Da) | Contains Cl | Similarity to start |\n|---|---|---|---|---|\n| A | CHEBI:73590 | 317.39 | no | 0.40 |\n| B | CHEBI:34303 | 150.22 | no | 0.23 |",
+              "gold": "B",
+              "gold_if_no_rule": "A"
+            }
+          ]
+        },
+        {
+          "dialogue_id": "mass-dev-00011-C2",
+          "condition": "C2",
+          "project": "mass",
+          "turns": [
+            {
+              "user": "Project mass. My starting molecule is 1,1,1,2-tetrachloroethane. Pick the best match to the starting molecule from these:\n| Option | ID | MW (Da) | Contains Cl | Similarity to start |\n|---|---|---|---|---|\n| A | CHEBI:82793 | 281.74 | yes | 0.07 |\n| B | CHEBI:48814 | 147.39 | yes | 0.21 |",
+              "gold": "B",
+              "gold_if_no_rule": "B"
+            },
+            {
+              "user": "Next set. Pick the best match to the starting molecule from these:\n| Option | ID | MW (Da) | Contains Cl | Similarity to start |\n|---|---|---|---|---|\n| A | CHEBI:197470 | 284.53 | no | 0.11 |\n| B | CHEBI:29060 | 152.24 | no | 0.00 |",
+              "gold": "B",
+              "gold_if_no_rule": "A"
+            },
+            {
+              "user": "Here is another list. Which candidate is closest to my starting molecule?\n| Option | ID | MW (Da) | Contains Cl | Similarity to start |\n|---|---|---|---|---|\n| A | CHEBI:82854 | 336.65 | yes | 0.10 |\n| B | CHEBI:6059 | 286.24 | no | 0.00 |",
+              "gold": "NONE",
+              "gold_if_no_rule": "A"
+            }
+          ]
+        },
+        {
+          "dialogue_id": "mass-dev-00012-C2",
+          "condition": "C2",
+          "project": "mass",
+          "turns": [
+            {
+              "user": "I'm working on project mass. The starting molecule is conduritol A. Pick the best match to the starting molecule from these:\nA. multiplolide B (MW 282.29 Da; contains chlorine: no; similarity to conduritol A: 0.15)\nB. (R)-3-aminoisobutyric acid (MW 103.12 Da; contains chlorine: no; similarity to conduritol A: 0.04)",
+              "gold": "B",
+              "gold_if_no_rule": "A"
+            },
+            {
+              "user": "Here is another list. Which candidate is closest to my starting molecule?\nA. D-galactal (MW 146.14 Da; contains chlorine: no; similarity to conduritol A: 0.36)\nB. conduritol (MW 146.14 Da; contains chlorine: no; similarity to conduritol A: 1.00)\nC. beta,beta-trehalose (MW 342.30 Da; contains chlorine: no; similarity to conduritol A: 0.15)",
+              "gold": "B",
+              "gold_if_no_rule": "B"
+            },
+            {
+              "user": "Here is another list. Pick the best match to the starting molecule from these:\nA. valienol 1-phosphate (MW 256.15 Da; contains chlorine: no; similarity to conduritol A: 0.15)\nB. dabcyl SE dye (MW 366.38 Da; contains chlorine: no; similarity to conduritol A: 0.04)",
+              "gold": "NONE",
+              "gold_if_no_rule": "A"
+            }
+          ]
+        },
+        {
+          "dialogue_id": "mass-dev-00013-C2",
+          "condition": "C2",
+          "project": "mass",
+          "turns": [
+            {
+              "user": "I'm working on project mass. The starting molecule is mevaldic acid. Pick the best match to the starting molecule from these:\n| Option | ID | MW (Da) | Contains Cl | Similarity to start |\n|---|---|---|---|---|\n| A | CHEBI:195361 | 310.52 | no | 0.23 |\n| B | CHEBI:39096 | 290.83 | yes | 0.00 |\n| C | CHEBI:32243 | 261.71 | yes | 0.11 |",
+              "gold": "NONE",
+              "gold_if_no_rule": "A"
+            },
+            {
+              "user": "Next set. Pick the best match to the starting molecule from these:\n| Option | ID | MW (Da) | Contains Cl | Similarity to start |\n|---|---|---|---|---|\n| A | CHEBI:133805 | 286.28 | no | 0.05 |\n| B | CHEBI:84270 | 163.22 | no | 0.16 |\n| C | CHEBI:16654 | 146.14 | no | 0.30 |",
+              "gold": "C",
+              "gold_if_no_rule": "C"
+            },
+            {
+              "user": "Here is another list. Pick the best match to the starting molecule from these:\n| Option | ID | MW (Da) | Contains Cl | Similarity to start |\n|---|---|---|---|---|\n| A | CHEBI:134195 | 270.41 | no | 0.30 |\n| B | CHEBI:575568 | 366.84 | yes | 0.04 |\n| C | CHEBI:84278 | 116.16 | no | 0.15 |",
+              "gold": "C",
+              "gold_if_no_rule": "A"
+            }
+          ]
+        },
+        {
+          "dialogue_id": "mass-dev-00014-C2",
+          "condition": "C2",
+          "project": "mass",
+          "turns": [
+            {
+              "user": "I'm working on project mass. The starting molecule is 4-amino-D-phenylalanine. Pick the best match to the starting molecule from these:\nA. O(4)-phospho-D-tyrosine (MW 261.17 Da; contains chlorine: no; similarity to 4-amino-D-phenylalanine: 0.57)\nB. beta-Ala-Phe (MW 236.27 Da; contains chlorine: no; similarity to 4-amino-D-phenylalanine: 0.35)\nC. cetraxate (MW 305.37 Da; contains chlorine: no; similarity to 4-amino-D-phenylalanine: 0.24)",
+              "gold": "B",
+              "gold_if_no_rule": "A"
+            },
+            {
+              "user": "Here is another list. Which candidate is closest to my starting molecule?\nA. Trp-Asp-Ser (MW 406.40 Da; contains chlorine: no; similarity to 4-amino-D-phenylalanine: 0.24)\nB. D-2,4,6-trimethylphenylalanine (MW 207.27 Da; contains chlorine: no; similarity to 4-amino-D-phenylalanine: 0.43)\nC. 4-nitro-L-phenylalanine (MW 210.19 Da; contains chlorine: no; similarity to 4-amino-D-phenylalanine: 0.61)",
+              "gold": "C",
+              "gold_if_no_rule": "C"
+            },
+            {
+              "user": "Next set. Which candidate is closest to my starting molecule?\nA. (10Z)-tricosene (MW 322.62 Da; contains chlorine: no; similarity to 4-amino-D-phenylalanine: 0.03)\nB. cefaclor (MW 367.81 Da; contains chlorine: yes; similarity to 4-amino-D-phenylalanine: 0.16)",
+              "gold": "NONE",
+              "gold_if_no_rule": "B"
+            }
+          ]
+        },
+        {
+          "dialogue_id": "mass-dev-00019-C2",
+          "condition": "C2",
+          "project": "mass",
+          "turns": [
+            {
+              "user": "I'm working on project mass. The starting molecule is imidazolidin-2-one. Which candidate is closest to my starting molecule?\n| Option | ID | MW (Da) | Contains Cl | Similarity to start |\n|---|---|---|---|---|\n| A | CHEBI:37808 | 58.12 | no | 0.00 |\n| B | CHEBI:133019 | 261.71 | yes | 0.12 |",
+              "gold": "A",
+              "gold_if_no_rule": "B"
+            },
+            {
+              "user": "Here is another list. Which candidate is closest to my starting molecule?\n| Option | ID | MW (Da) | Contains Cl | Similarity to start |\n|---|---|---|---|---|\n| A | CHEBI:76341 | 114.15 | no | 0.29 |\n| B | CHEBI:85419 | 335.32 | no | 0.11 |\n| C | CHEBI:327119 | 71.08 | no | 0.47 |",
+              "gold": "C",
+              "gold_if_no_rule": "C"
+            },
+            {
+              "user": "Next set. Which candidate is closest to my starting molecule?\n| Option | ID | MW (Da) | Contains Cl | Similarity to start |\n|---|---|---|---|---|\n| A | CHEBI:50434 | 404.42 | no | 0.18 |\n| B | CHEBI:84145 | 400.65 | no | 0.05 |",
+              "gold": "NONE",
+              "gold_if_no_rule": "A"
+            }
+          ]
+        },
+        {
+          "dialogue_id": "mass-dev-00021-C2",
+          "condition": "C2",
+          "project": "mass",
+          "turns": [
+            {
+              "user": "I'm working on project mass. The starting molecule is (S)-3-methyl-2-oxovaleric acid. Which candidate is closest to my starting molecule?\n| Option | ID | MW (Da) | Contains Cl | Similarity to start |\n|---|---|---|---|---|\n| A | CHEBI:131828 | 265.23 | no | 0.04 |\n| B | CHEBI:1148 | 104.10 | no | 0.39 |\n| C | CHEBI:195434 | 281.31 | no | 0.17 |",
+              "gold": "B",
+              "gold_if_no_rule": "B"
+            },
+            {
+              "user": "Here is another list. Pick the best match to the starting molecule from these:\n| Option | ID | MW (Da) | Contains Cl | Similarity to start |\n|---|---|---|---|---|\n| A | CHEBI:17863 | 340.28 | no | 0.09 |\n| B | CHEBI:84878 | 354.62 | no | 0.33 |\n| C | CHEBI:37553 | 132.16 | no | 0.19 |",
+              "gold": "C",
+              "gold_if_no_rule": "B"
+            },
+            {
+              "user": "Next set. Which candidate is closest to my starting molecule?\n| Option | ID | MW (Da) | Contains Cl | Similarity to start |\n|---|---|---|---|---|\n| A | CHEBI:40729 | 293.27 | no | 0.19 |\n| B | CHEBI:4170 | 260.13 | no | 0.07 |",
+              "gold": "NONE",
+              "gold_if_no_rule": "A"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "step": 4,
+      "tool": "capture",
+      "args": {
+        "texts": [
+          {
+            "user": "Project mass."
+          },
+          {
+            "user": "I'm working on project mass."
+          },
+          {
+            "user": "For project mass, select the best molecule."
+          }
+        ],
+        "layer": 12,
+        "site": "mlp_in",
+        "position": "token:mass",
+        "name": "key_mass12"
+      },
+      "result": {
+        "name": "key_mass12",
+        "dim": 13824,
+        "norm": 6.7572,
+        "top_dims": [
+          [
+            7611,
+            1.0221
+          ],
+          [
+            5635,
+            0.7253
+          ],
+          [
+            787,
+            -0.7005
+          ],
+          [
+            9596,
+            0.6198
+          ],
+          [
+            7238,
+            -0.6107
+          ],
+          [
+            1896,
+            -0.5957
+          ],
+          [
+            8269,
+            -0.543
+          ],
+          [
+            9599,
+            -0.5264
+          ]
+        ],
+        "per_text_cosine_to_mean": [
+          0.939,
+          0.876,
+          0.967
+        ]
+      }
+    },
+    {
+      "step": 4,
+      "tool": "capture",
+      "args": {
+        "texts": [
+          {
+            "user": "Project Birch."
+          },
+          {
+            "user": "I'm working on project Cedar."
+          },
+          {
+            "user": "For project Maple, select the best molecule."
+          }
+        ],
+        "layer": 12,
+        "site": "mlp_in",
+        "position": "token:project",
+        "name": "key_ctrl12"
+      },
+      "result": {
+        "name": "key_ctrl12",
+        "dim": 13824,
+        "norm": 6.9175,
+        "top_dims": [
+          [
+            8748,
+            1.58
+          ],
+          [
+            4776,
+            -1.1797
+          ],
+          [
+            39,
+            0.8035
+          ],
+          [
+            6604,
+            -0.7689
+          ],
+          [
+            5169,
+            -0.6383
+          ],
+          [
+            12783,
+            0.6302
+          ],
+          [
+            13011,
+            -0.5553
+          ],
+          [
+            6528,
+            0.5462
+          ]
+        ],
+        "per_text_cosine_to_mean": [
+          0.696,
+          0.852,
+          0.858
+        ]
+      }
+    },
+    {
+      "step": 4,
+      "tool": "capture",
+      "args": {
+        "texts": [
+          {
+            "user": "Project mass. Only consider molecules with a molecular weight of at most 250 daltons. Which candidate is closest to my starting molecule?"
+          },
+          {
+            "user": "Project mass. Exclude every candidate with MW greater than 250 Da. If no candidate has MW at most 250, answer NONE. Which candidate is closest?"
+          },
+          {
+            "user": "Project mass. The molecular weight limit is 250 daltons. First filter out molecules above 250 Da, then select the most similar remaining candidate. Which candidate is closest?"
+          }
+        ],
+        "layer": 12,
+        "site": "resid_post",
+        "position": "token:?",
+        "name": "rule12"
+      },
+      "result": {
+        "name": "rule12",
+        "dim": 5120,
+        "norm": 12.9982,
+        "top_dims": [
+          [
+            4592,
+            -3.7188
+          ],
+          [
+            1917,
+            -3.3281
+          ],
+          [
+            902,
+            -2.4167
+          ],
+          [
+            864,
+            2.2188
+          ],
+          [
+            964,
+            1.8672
+          ],
+          [
+            3411,
+            -1.2031
+          ],
+          [
+            3690,
+            -1.013
+          ],
+          [
+            3487,
+            0.9323
+          ]
+        ],
+        "per_text_cosine_to_mean": [
+          0.92,
+          0.953,
+          0.956
+        ]
+      }
+    },
+    {
+      "step": 4,
+      "tool": "capture",
+      "args": {
+        "texts": [
+          {
+            "user": "Project mass. Which candidate is closest to my starting molecule?"
+          },
+          {
+            "user": "Project mass. Which candidate is closest?"
+          },
+          {
+            "user": "Project mass. Which candidate is closest?"
+          }
+        ],
+        "layer": 12,
+        "site": "resid_post",
+        "position": "token:?",
+        "name": "norule12"
+      },
+      "result": {
+        "name": "norule12",
+        "dim": 5120,
+        "norm": 13.4643,
+        "top_dims": [
+          [
+            4592,
+            -3.724
+          ],
+          [
+            1917,
+            -3.1458
+          ],
+          [
+            902,
+            -2.7396
+          ],
+          [
+            864,
+            1.849
+          ],
+          [
+            964,
+            1.6719
+          ],
+          [
+            3690,
+            -1.1875
+          ],
+          [
+            4932,
+            1.0365
+          ],
+          [
+            3411,
+            -0.9206
+          ]
+        ],
+        "per_text_cosine_to_mean": [
+          0.95,
+          0.989,
+          0.989
+        ]
+      }
+    },
+    {
+      "step": 5,
+      "tool": "capture",
+      "args": {
+        "texts": [
+          {
+            "user": "Project Birch."
+          },
+          {
+            "user": "I'm working on project Birch."
+          },
+          {
+            "user": "For project Birch, select the best molecule."
+          }
+        ],
+        "layer": 12,
+        "site": "mlp_in",
+        "position": "token:Birch",
+        "name": "key_other12"
+      },
+      "result": {
+        "name": "key_other12",
+        "dim": 13824,
+        "norm": 9.3412,
+        "top_dims": [
+          [
+            13574,
+            -1.3854
+          ],
+          [
+            1590,
+            1.3008
+          ],
+          [
+            3037,
+            1.0703
+          ],
+          [
+            13104,
+            1.0534
+          ],
+          [
+            12155,
+            -1.0039
+          ],
+          [
+            8048,
+            0.8965
+          ],
+          [
+            1896,
+            -0.8763
+          ],
+          [
+            6298,
+            -0.8568
+          ]
+        ],
+        "per_text_cosine_to_mean": [
+          0.946,
+          0.977,
+          0.975
+        ]
+      }
+    },
+    {
+      "step": 5,
+      "tool": "vector_op",
+      "args": {
+        "out": "value12",
+        "op": "sub",
+        "a": "rule12",
+        "b": "norule12"
+      },
+      "result": {
+        "name": "value12",
+        "dim": 5120,
+        "norm": 7.3192,
+        "top_dims": [
+          [
+            44,
+            0.4979
+          ],
+          [
+            2488,
+            0.4121
+          ],
+          [
+            3904,
+            -0.397
+          ],
+          [
+            864,
+            0.3698
+          ],
+          [
+            4876,
+            0.3672
+          ],
+          [
+            4932,
+            -0.3581
+          ],
+          [
+            4819,
+            -0.3568
+          ],
+          [
+            179,
+            0.3441
+          ]
+        ]
+      }
+    },
+    {
+      "step": 6,
+      "tool": "vector_op",
+      "args": {
+        "out": "key12",
+        "op": "project_out",
+        "a": "key_mass12",
+        "b": "key_other12"
+      },
+      "result": {
+        "name": "key12",
+        "dim": 13824,
+        "norm": 6.5721,
+        "top_dims": [
+          [
+            7611,
+            1.0274
+          ],
+          [
+            5635,
+            0.7277
+          ],
+          [
+            787,
+            -0.6984
+          ],
+          [
+            9596,
+            0.6302
+          ],
+          [
+            7238,
+            -0.5888
+          ],
+          [
+            8269,
+            -0.538
+          ],
+          [
+            9599,
+            -0.5211
+          ],
+          [
+            7225,
+            -0.5086
+          ]
+        ]
+      }
+    },
+    {
+      "step": 7,
+      "tool": "vector_op",
+      "args": {
+        "out": "key12s",
+        "op": "topk",
+        "a": "key12",
+        "k": 267
+      },
+      "result": {
+        "name": "key12s",
+        "dim": 13824,
+        "norm": 4.0378,
+        "top_dims": [
+          [
+            7611,
+            1.0274
+          ],
+          [
+            5635,
+            0.7277
+          ],
+          [
+            787,
+            -0.6984
+          ],
+          [
+            9596,
+            0.6302
+          ],
+          [
+            7238,
+            -0.5888
+          ],
+          [
+            8269,
+            -0.538
+          ],
+          [
+            9599,
+            -0.5211
+          ],
+          [
+            7225,
+            -0.5086
+          ]
+        ]
+      }
+    },
+    {
+      "step": 8,
+      "tool": "apply_edit",
+      "args": {
+        "spec": [
+          {
+            "type": "rank1",
+            "param": "model.layers.12.mlp.down_proj.weight",
+            "u": "value12",
+            "v": "key12s",
+            "scale": 0.25,
+            "rows": 5120,
+            "cols": 267
+          }
+        ]
+      },
+      "result": {
+        "ok": true,
+        "entries": 1367040,
+        "budget": 1371619,
+        "l2_norm": 7.3884
+      }
+    },
+    {
+      "step": 9,
+      "tool": "evaluate",
+      "args": {},
+      "result": {
+        "summary": {
+          "mass": {
+            "C1": {
+              "invalid": 0.0,
+              "success": 0.16666666666666666,
+              "turn_acc": 0.5277777777777778,
+              "n_scenarios": 12
+            },
+            "C2": {
+              "invalid": 0.027777777777777776,
+              "success": 0.0,
+              "turn_acc": 0.3611111111111111,
+              "n_scenarios": 12
+            },
+            "C3": {
+              "invalid": 0.0,
+              "overapp_rate": 0.08333333333333333,
+              "success": 0.8333333333333334,
+              "turn_acc": 0.9444444444444443,
+              "n_scenarios": 12
+            },
+            "C4": {
+              "invalid": 0.0,
+              "post_change_success": 0.9166666666666666,
+              "should_change_acc": 0.9583333333333334,
+              "success": 0.5833333333333334,
+              "turn_acc": 0.8333333333333331,
+              "n_scenarios": 12
+            }
+          }
+        },
+        "n_dialogues": 48,
+        "errors": [
+          {
+            "dialogue_id": "mass-dev-00228-C1",
+            "condition": "C1",
+            "turn": 0,
+            "pred": "B",
+            "raw": "B",
+            "gold": "NONE"
+          },
+          {
+            "dialogue_id": "mass-dev-00007-C1",
+            "condition": "C1",
+            "turn": 0,
+            "pred": "A",
+            "raw": "A",
+            "gold": "NONE"
+          },
+          {
+            "dialogue_id": "mass-dev-00127-C1",
+            "condition": "C1",
+            "turn": 0,
+            "pred": "B",
+            "raw": "B",
+            "gold": "NONE"
+          },
+          {
+            "dialogue_id": "mass-dev-00118-C1",
+            "condition": "C1",
+            "turn": 0,
+            "pred": "B",
+            "raw": "B",
+            "gold": "NONE"
+          },
+          {
+            "dialogue_id": "mass-dev-00206-C1",
+            "condition": "C1",
+            "turn": 0,
+            "pred": "B",
+            "raw": "B",
+            "gold": "A"
+          }
+        ]
+      }
+    },
+    {
+      "step": 10,
+      "tool": "revert_edit",
+      "args": {},
+      "result": {
+        "ok": true
+      }
+    },
+    {
+      "step": 11,
+      "tool": "capture",
+      "args": {
+        "texts": [
+          {
+            "dialogue": "mass-dev-00001-C2",
+            "turn": 0
+          },
+          {
+            "dialogue": "mass-dev-00004-C2",
+            "turn": 0
+          },
+          {
+            "dialogue": "mass-dev-00006-C2",
+            "turn": 0
+          },
+          {
+            "dialogue": "mass-dev-00012-C2",
+            "turn": 0
+          },
+          {
+            "dialogue": "mass-dev-00013-C2",
+            "turn": 0
+          },
+          {
+            "dialogue": "mass-dev-00014-C2",
+            "turn": 0
+          }
+        ],
+        "layer": 24,
+        "site": "mlp_in",
+        "name": "mass24"
+      },
+      "result": {
+        "name": "mass24",
+        "dim": 13824,
+        "norm": 20.9943,
+        "top_dims": [
+          [
+            11649,
+            5.3177
+          ],
+          [
+            9488,
+            4.2005
+          ],
+          [
+            11171,
+            -3.862
+          ],
+          [
+            1826,
+            -3.1667
+          ],
+          [
+            9564,
+            2.8255
+          ],
+          [
+            3335,
+            2.5443
+          ],
+          [
+            8509,
+            2.3906
+          ],
+          [
+            6653,
+            2.1562
+          ]
+        ],
+        "per_text_cosine_to_mean": [
+          0.967,
+          0.944,
+          0.95,
+          0.969,
+          0.967,
+          0.972
+        ]
+      }
+    },
+    {
+      "step": 11,
+      "tool": "capture",
+      "args": {
+        "texts": [
+          {
+            "dialogue": "mass-dev-00001-C3",
+            "turn": 0
+          },
+          {
+            "dialogue": "mass-dev-00004-C3",
+            "turn": 0
+          },
+          {
+            "dialogue": "mass-dev-00006-C3",
+            "turn": 0
+          },
+          {
+            "dialogue": "mass-dev-00012-C3",
+            "turn": 0
+          },
+          {
+            "dialogue": "mass-dev-00013-C3",
+            "turn": 0
+          },
+          {
+            "dialogue": "mass-dev-00014-C3",
+            "turn": 0
+          }
+        ],
+        "layer": 24,
+        "site": "mlp_in",
+        "name": "other24"
+      },
+      "result": {
+        "name": "other24",
+        "dim": 13824,
+        "norm": 20.9574,
+        "top_dims": [
+          [
+            11649,
+            5.2396
+          ],
+          [
+            9488,
+            4.1328
+          ],
+          [
+            11171,
+            -3.5833
+          ],
+          [
+            1826,
+            -3.1302
+          ],
+          [
+            9564,
+            2.7031
+          ],
+          [
+            3335,
+            2.4583
+          ],
+          [
+            8509,
+            2.4323
+          ],
+          [
+            6653,
+            2.194
+          ]
+        ],
+        "per_text_cosine_to_mean": [
+          0.971,
+          0.955,
+          0.961,
+          0.97,
+          0.97,
+          0.952
+        ]
+      }
+    },
+    {
+      "step": 11,
+      "tool": "capture",
+      "args": {
+        "texts": [
+          {
+            "dialogue": "mass-dev-00001-C1",
+            "turn": 0
+          },
+          {
+            "dialogue": "mass-dev-00004-C1",
+            "turn": 0
+          },
+          {
+            "dialogue": "mass-dev-00006-C1",
+            "turn": 0
+          },
+          {
+            "dialogue": "mass-dev-00012-C1",
+            "turn": 0
+          },
+          {
+            "dialogue": "mass-dev-00013-C1",
+            "turn": 0
+          },
+          {
+            "dialogue": "mass-dev-00014-C1",
+            "turn": 0
+          }
+        ],
+        "layer": 24,
+        "site": "resid_post",
+        "name": "rule24"
+      },
+      "result": {
+        "name": "rule24",
+        "dim": 5120,
+        "norm": 28.2745,
+        "top_dims": [
+          [
+            4592,
+            -6.8802
+          ],
+          [
+            1917,
+            -6.8021
+          ],
+          [
+            864,
+            3.9792
+          ],
+          [
+            491,
+            -3.6094
+          ],
+          [
+            892,
+            -3.3099
+          ],
+          [
+            1801,
+            3.0312
+          ],
+          [
+            3690,
+            -3.0104
+          ],
+          [
+            1885,
+            -2.9583
+          ]
+        ],
+        "per_text_cosine_to_mean": [
+          0.968,
+          0.951,
+          0.949,
+          0.965,
+          0.954,
+          0.972
+        ]
+      }
+    },
+    {
+      "step": 11,
+      "tool": "capture",
+      "args": {
+        "texts": [
+          {
+            "dialogue": "mass-dev-00001-C2",
+            "turn": 0
+          },
+          {
+            "dialogue": "mass-dev-00004-C2",
+            "turn": 0
+          },
+          {
+            "dialogue": "mass-dev-00006-C2",
+            "turn": 0
+          },
+          {
+            "dialogue": "mass-dev-00012-C2",
+            "turn": 0
+          },
+          {
+            "dialogue": "mass-dev-00013-C2",
+            "turn": 0
+          },
+          {
+            "dialogue": "mass-dev-00014-C2",
+            "turn": 0
+          }
+        ],
+        "layer": 24,
+        "site": "resid_post",
+        "name": "norule24"
+      },
+      "result": {
+        "name": "norule24",
+        "dim": 5120,
+        "norm": 28.5881,
+        "top_dims": [
+          [
+            4592,
+            -6.6667
+          ],
+          [
+            1917,
+            -6.5573
+          ],
+          [
+            864,
+            3.9896
+          ],
+          [
+            491,
+            -3.5
+          ],
+          [
+            3690,
+            -3.1328
+          ],
+          [
+            892,
+            -3.1068
+          ],
+          [
+            1801,
+            3.0286
+          ],
+          [
+            1885,
+            -2.9557
+          ]
+        ],
+        "per_text_cosine_to_mean": [
+          0.974,
+          0.956,
+          0.966,
+          0.974,
+          0.975,
+          0.978
+        ]
+      }
+    },
+    {
+      "step": 12,
+      "tool": "vector_op",
+      "args": {
+        "out": "key24diff",
+        "op": "sub",
+        "a": "mass24",
+        "b": "other24"
+      },
+      "result": {
+        "name": "key24diff",
+        "dim": 13824,
+        "norm": 1.3284,
+        "top_dims": [
+          [
+            11171,
+            -0.2786
+          ],
+          [
+            6196,
+            -0.2666
+          ],
+          [
+            13126,
+            -0.1799
+          ],
+          [
+            7779,
+            -0.1576
+          ],
+          [
+            7656,
+            -0.1444
+          ],
+          [
+            13318,
+            0.1263
+          ],
+          [
+            9047,
+            -0.1263
+          ],
+          [
+            9564,
+            0.1224
+          ]
+        ]
+      }
+    },
+    {
+      "step": 12,
+      "tool": "vector_op",
+      "args": {
+        "out": "value24",
+        "op": "sub",
+        "a": "rule24",
+        "b": "norule24"
+      },
+      "result": {
+        "name": "value24",
+        "dim": 5120,
+        "norm": 6.8702,
+        "top_dims": [
+          [
+            2333,
+            0.3679
+          ],
+          [
+            1147,
+            -0.3493
+          ],
+          [
+            2095,
+            -0.3408
+          ],
+          [
+            2325,
+            0.3341
+          ],
+          [
+            4161,
+            0.3192
+          ],
+          [
+            391,
+            0.3168
+          ],
+          [
+            2593,
+            -0.3098
+          ],
+          [
+            2833,
+            0.3079
+          ]
+        ]
+      }
+    },
+    {
+      "step": 13,
+      "tool": "vector_op",
+      "args": {
+        "out": "key24p",
+        "op": "project_out",
+        "a": "key24diff",
+        "b": "other24"
+      },
+      "result": {
+        "name": "key24p",
+        "dim": 13824,
+        "norm": 1.3284,
+        "top_dims": [
+          [
+            11171,
+            -0.2795
+          ],
+          [
+            6196,
+            -0.2663
+          ],
+          [
+            13126,
+            -0.18
+          ],
+          [
+            7779,
+            -0.1571
+          ],
+          [
+            7656,
+            -0.1445
+          ],
+          [
+            13318,
+            0.1265
+          ],
+          [
+            9047,
+            -0.1261
+          ],
+          [
+            9564,
+            0.1231
+          ]
+        ]
+      }
+    },
+    {
+      "step": 14,
+      "tool": "vector_op",
+      "args": {
+        "out": "key24s",
+        "op": "topk",
+        "a": "key24p",
+        "k": 267
+      },
+      "result": {
+        "name": "key24s",
+        "dim": 13824,
+        "norm": 0.9333,
+        "top_dims": [
+          [
+            11171,
+            -0.2795
+          ],
+          [
+            6196,
+            -0.2663
+          ],
+          [
+            13126,
+            -0.18
+          ],
+          [
+            7779,
+            -0.1571
+          ],
+          [
+            7656,
+            -0.1445
+          ],
+          [
+            13318,
+            0.1265
+          ],
+          [
+            9047,
+            -0.1261
+          ],
+          [
+            9564,
+            0.1231
+          ]
+        ]
+      }
+    },
+    {
+      "step": 15,
+      "tool": "vector_op",
+      "args": {
+        "out": "cos",
+        "op": "cosine",
+        "a": "key24s",
+        "b": "other24"
+      },
+      "result": {
+        "cosine": 0.02745424024760723
+      }
+    },
+    {
+      "step": 15,
+      "tool": "vector_op",
+      "args": {
+        "out": "cos",
+        "op": "cosine",
+        "a": "key24s",
+        "b": "mass24"
+      },
+      "result": {
+        "cosine": 0.07185476273298264
+      }
+    },
+    {
+      "step": 16,
+      "tool": "apply_edit",
+      "args": {
+        "spec": [
+          {
+            "type": "rank1",
+            "param": "model.layers.24.mlp.down_proj.weight",
+            "u": "value24",
+            "v": "key24s",
+            "scale": 1.5,
+            "rows": 5120,
+            "cols": 267
+          }
+        ]
+      },
+      "result": {
+        "ok": true,
+        "entries": 1367040,
+        "budget": 1371619,
+        "l2_norm": 9.618
+      }
+    },
+    {
+      "step": 17,
+      "tool": "evaluate",
+      "args": {},
+      "result": {
+        "summary": {
+          "mass": {
+            "C1": {
+              "invalid": 0.0,
+              "success": 0.16666666666666666,
+              "turn_acc": 0.5277777777777778,
+              "n_scenarios": 12
+            },
+            "C2": {
+              "invalid": 0.0,
+              "success": 0.0,
+              "turn_acc": 0.38888888888888884,
+              "n_scenarios": 12
+            },
+            "C3": {
+              "invalid": 0.0,
+              "overapp_rate": 0.20833333333333334,
+              "success": 0.6666666666666666,
+              "turn_acc": 0.861111111111111,
+              "n_scenarios": 12
+            },
+            "C4": {
+              "invalid": 0.0,
+              "post_change_success": 1.0,
+              "should_change_acc": 1.0,
+              "success": 0.5,
+              "turn_acc": 0.8333333333333331,
+              "n_scenarios": 12
+            }
+          }
+        },
+        "n_dialogues": 48,
+        "errors": [
+          {
+            "dialogue_id": "mass-dev-00228-C1",
+            "condition": "C1",
+            "turn": 0,
+            "pred": "B",
+            "raw": "B",
+            "gold": "NONE"
+          },
+          {
+            "dialogue_id": "mass-dev-00007-C1",
+            "condition": "C1",
+            "turn": 0,
+            "pred": "A",
+            "raw": "A",
+            "gold": "NONE"
+          },
+          {
+            "dialogue_id": "mass-dev-00127-C1",
+            "condition": "C1",
+            "turn": 0,
+            "pred": "B",
+            "raw": "B",
+            "gold": "NONE"
+          },
+          {
+            "dialogue_id": "mass-dev-00118-C1",
+            "condition": "C1",
+            "turn": 0,
+            "pred": "B",
+            "raw": "B",
+            "gold": "NONE"
+          },
+          {
+            "dialogue_id": "mass-dev-00206-C1",
+            "condition": "C1",
+            "turn": 0,
+            "pred": "B",
+            "raw": "B",
+            "gold": "A"
+          }
+        ]
+      }
+    },
+    {
+      "step": 18,
+      "tool": "revert_edit",
+      "args": {},
+      "result": {
+        "ok": true
+      }
+    },
+    {
+      "step": 19,
+      "tool": "capture",
+      "args": {
+        "texts": [
+          {
+            "user": "Project mass. Which candidate is closest?\nA. MW 214.22 Da; similarity 0.17\nB. MW 284.36 Da; similarity 0.28\nIMPORTANT: The maximum allowed molecular weight is 250 daltons. B is ineligible. Only A is eligible. Answer A."
+          },
+          {
+            "user": "Project mass. Which candidate is closest?\nA. MW 442.38 Da; similarity 0.05\nB. MW 270.37 Da; similarity 0.20\nIMPORTANT: The maximum allowed molecular weight is 250 daltons. Both candidates exceed the limit. No eligible candidates. Answer NONE."
+          },
+          {
+            "user": "Project mass. Which candidate is closest?\nA. MW 330.55 Da; similarity 0.15\nB. MW 89.16 Da; similarity 0.00\nIMPORTANT: The maximum allowed molecular weight is 250 daltons. A is ineligible. Only B is eligible. Answer B."
+          },
+          {
+            "user": "Project mass. Which candidate is closest?\nA. MW 310.52 Da; similarity 0.23\nB. MW 290.83 Da; similarity 0.00\nC. MW 261.71 Da; similarity 0.11\nIMPORTANT: The maximum allowed molecular weight is 250 daltons. All candidates exceed the limit. No eligible candidates. Answer NONE."
+          },
+          {
+            "user": "Project mass. Which candidate is closest?\nA. MW 261.17 Da; similarity 0.57\nB. MW 236.27 Da; similarity 0.35\nC. MW 305.37 Da; similarity 0.24\nIMPORTANT: The maximum allowed molecular weight is 250 daltons. A and C are ineligible. Only B is eligible. Answer B."
+          },
+          {
+            "user": "Project mass. Which candidate is closest?\nA. MW 320.0 Da; similarity 0.60\nB. MW 280.0 Da; similarity 0.50\nC. MW 150.0 Da; similarity 0.40\nIMPORTANT: The maximum allowed molecular weight is 250 daltons. A and B are ineligible. Only C is eligible. Answer C."
+          }
+        ],
+        "layer": 24,
+        "site": "resid_post",
+        "name": "strong24"
+      },
+      "result": {
+        "name": "strong24",
+        "dim": 5120,
+        "norm": 27.2758,
+        "top_dims": [
+          [
+            4592,
+            -6.7917
+          ],
+          [
+            1917,
+            -6.6979
+          ],
+          [
+            3690,
+            -3.9479
+          ],
+          [
+            491,
+            -3.7604
+          ],
+          [
+            1801,
+            3.7422
+          ],
+          [
+            864,
+            3.5599
+          ],
+          [
+            892,
+            -3.112
+          ],
+          [
+            798,
+            -3.013
+          ]
+        ],
+        "per_text_cosine_to_mean": [
+          0.943,
+          0.893,
+          0.96,
+          0.892,
+          0.958,
+          0.957
+        ]
+      }
+    },
+    {
+      "step": 20,
+      "tool": "vector_op",
+      "args": {
+        "out": "strongvalue24",
+        "op": "sub",
+        "a": "strong24",
+        "b": "norule24"
+      },
+      "result": {
+        "name": "strongvalue24",
+        "dim": 5120,
+        "norm": 14.8995,
+        "top_dims": [
+          [
+            798,
+            -0.8659
+          ],
+          [
+            3690,
+            -0.8151
+          ],
+          [
+            2068,
+            0.7799
+          ],
+          [
+            4362,
+            0.7209
+          ],
+          [
+            1088,
+            -0.718
+          ],
+          [
+            3559,
+            -0.7148
+          ],
+          [
+            1801,
+            0.7135
+          ],
+          [
+            634,
+            -0.7115
+          ]
+        ]
+      }
+    },
+    {
+      "step": 21,
+      "tool": "apply_edit",
+      "args": {
+        "spec": [
+          {
+            "type": "rank1",
+            "param": "model.layers.24.mlp.down_proj.weight",
+            "u": "strongvalue24",
+            "v": "key24s",
+            "scale": 1.5,
+            "rows": 5120,
+            "cols": 267
+          }
+        ]
+      },
+      "result": {
+        "ok": true,
+        "entries": 1367040,
+        "budget": 1371619,
+        "l2_norm": 20.8588
+      }
+    },
+    {
+      "step": 22,
+      "tool": "evaluate",
+      "args": {},
+      "result": {
+        "summary": {
+          "mass": {
+            "C1": {
+              "invalid": 0.0,
+              "success": 0.16666666666666666,
+              "turn_acc": 0.5277777777777778,
+              "n_scenarios": 12
+            },
+            "C2": {
+              "invalid": 0.0,
+              "success": 0.0,
+              "turn_acc": 0.3611111111111111,
+              "n_scenarios": 12
+            },
+            "C3": {
+              "invalid": 0.0,
+              "overapp_rate": 0.08333333333333333,
+              "success": 0.8333333333333334,
+              "turn_acc": 0.9444444444444443,
+              "n_scenarios": 12
+            },
+            "C4": {
+              "invalid": 0.0,
+              "post_change_success": 0.9166666666666666,
+              "should_change_acc": 0.9583333333333334,
+              "success": 0.5,
+              "turn_acc": 0.8055555555555554,
+              "n_scenarios": 12
+            }
+          }
+        },
+        "n_dialogues": 48,
+        "errors": [
+          {
+            "dialogue_id": "mass-dev-00228-C1",
+            "condition": "C1",
+            "turn": 0,
+            "pred": "B",
+            "raw": "B",
+            "gold": "NONE"
+          },
+          {
+            "dialogue_id": "mass-dev-00007-C1",
+            "condition": "C1",
+            "turn": 0,
+            "pred": "A",
+            "raw": "A",
+            "gold": "NONE"
+          },
+          {
+            "dialogue_id": "mass-dev-00127-C1",
+            "condition": "C1",
+            "turn": 0,
+            "pred": "B",
+            "raw": "B",
+            "gold": "NONE"
+          },
+          {
+            "dialogue_id": "mass-dev-00118-C1",
+            "condition": "C1",
+            "turn": 0,
+            "pred": "B",
+            "raw": "B",
+            "gold": "NONE"
+          },
+          {
+            "dialogue_id": "mass-dev-00206-C1",
+            "condition": "C1",
+            "turn": 0,
+            "pred": "B",
+            "raw": "B",
+            "gold": "A"
+          }
+        ]
+      }
+    },
+    {
+      "step": 23,
+      "tool": "revert_edit",
+      "args": {},
+      "result": {
+        "ok": true
+      }
+    },
+    {
+      "step": 24,
+      "tool": "capture",
+      "args": {
+        "texts": [
+          {
+            "dialogue": "mass-dev-00004-C2",
+            "turn": 0
+          },
+          {
+            "dialogue": "mass-dev-00007-C2",
+            "turn": 0
+          },
+          {
+            "dialogue": "mass-dev-00013-C2",
+            "turn": 0
+          },
+          {
+            "dialogue": "mass-dev-00001-C2",
+            "turn": 1
+          },
+          {
+            "dialogue": "mass-dev-00002-C2",
+            "turn": 1
+          },
+          {
+            "dialogue": "mass-dev-00005-C2",
+            "turn": 2
+          },
+          {
+            "dialogue": "mass-dev-00006-C2",
+            "turn": 1
+          },
+          {
+            "dialogue": "mass-dev-00012-C2",
+            "turn": 2
+          }
+        ],
+        "layer": 32,
+        "site": "mlp_in",
+        "name": "none32"
+      },
+      "result": {
+        "name": "none32",
+        "dim": 13824,
+        "norm": 37.1112,
+        "top_dims": [
+          [
+            9852,
+            -16.5234
+          ],
+          [
+            7736,
+            -10.7109
+          ],
+          [
+            4200,
+            7.3008
+          ],
+          [
+            7609,
+            6.1328
+          ],
+          [
+            9486,
+            -5.9414
+          ],
+          [
+            3478,
+            4.4697
+          ],
+          [
+            6620,
+            -4.4023
+          ],
+          [
+            177,
+            -3.9746
+          ]
+        ],
+        "per_text_cosine_to_mean": [
+          0.941,
+          0.957,
+          0.926,
+          0.933,
+          0.925,
+          0.932,
+          0.902,
+          0.891
+        ]
+      }
+    },
+    {
+      "step": 24,
+      "tool": "capture",
+      "args": {
+        "texts": [
+          {
+            "dialogue": "mass-dev-00001-C2",
+            "turn": 0
+          },
+          {
+            "dialogue": "mass-dev-00002-C2",
+            "turn": 0
+          },
+          {
+            "dialogue": "mass-dev-00006-C2",
+            "turn": 0
+          },
+          {
+            "dialogue": "mass-dev-00012-C2",
+            "turn": 0
+          },
+          {
+            "dialogue": "mass-dev-00014-C2",
+            "turn": 0
+          },
+          {
+            "dialogue": "mass-dev-00004-C2",
+            "turn": 1
+          },
+          {
+            "dialogue": "mass-dev-00007-C2",
+            "turn": 1
+          },
+          {
+            "dialogue": "mass-dev-00013-C2",
+            "turn": 1
+          }
+        ],
+        "layer": 32,
+        "site": "mlp_in",
+        "name": "valid32"
+      },
+      "result": {
+        "name": "valid32",
+        "dim": 13824,
+        "norm": 38.7632,
+        "top_dims": [
+          [
+            9852,
+            -18.1016
+          ],
+          [
+            7736,
+            -11.5703
+          ],
+          [
+            4200,
+            7.0078
+          ],
+          [
+            7609,
+            6.1328
+          ],
+          [
+            3478,
+            5.1152
+          ],
+          [
+            9486,
+            -4.5742
+          ],
+          [
+            2320,
+            -4.144
+          ],
+          [
+            11300,
+            -4.1255
+          ]
+        ],
+        "per_text_cosine_to_mean": [
+          0.963,
+          0.963,
+          0.951,
+          0.947,
+          0.978,
+          0.844,
+          0.948,
+          0.863
+        ]
+      }
+    },
+    {
+      "step": 24,
+      "tool": "capture",
+      "args": {
+        "texts": [
+          {
+            "dialogue": "mass-dev-00004-C3",
+            "turn": 0
+          },
+          {
+            "dialogue": "mass-dev-00007-C3",
+            "turn": 0
+          },
+          {
+            "dialogue": "mass-dev-00013-C3",
+            "turn": 0
+          },
+          {
+            "dialogue": "mass-dev-00001-C3",
+            "turn": 1
+          },
+          {
+            "dialogue": "mass-dev-00002-C3",
+            "turn": 1
+          },
+          {
+            "dialogue": "mass-dev-00005-C3",
+            "turn": 2
+          },
+          {
+            "dialogue": "mass-dev-00006-C3",
+            "turn": 1
+          },
+          {
+            "dialogue": "mass-dev-00012-C3",
+            "turn": 2
+          }
+        ],
+        "layer": 32,
+        "site": "mlp_in",
+        "name": "other32"
+      },
+      "result": {
+        "name": "other32",
+        "dim": 13824,
+        "norm": 37.2043,
+        "top_dims": [
+          [
+            9852,
+            -16.8047
+          ],
+          [
+            7736,
+            -10.6797
+          ],
+          [
+            4200,
+            7.2383
+          ],
+          [
+            7609,
+            6.3047
+          ],
+          [
+            9486,
+            -5.6523
+          ],
+          [
+            3478,
+            4.6611
+          ],
+          [
+            6620,
+            -4.3691
+          ],
+          [
+            177,
+            -4.0078
+          ]
+        ],
+        "per_text_cosine_to_mean": [
+          0.948,
+          0.954,
+          0.944,
+          0.949,
+          0.922,
+          0.923,
+          0.905,
+          0.855
+        ]
+      }
+    },
+    {
+      "step": 24,
+      "tool": "token_direction",
+      "args": {
+        "token": "NONE",
+        "name": "none_unembed"
+      },
+      "result": {
+        "name": "none_unembed",
+        "token_ids": [
+          46525
+        ],
+        "dim": 5120,
+        "norm": 2.4666,
+        "top_dims": [
+          [
+            3859,
+            -0.1455
+          ],
+          [
+            3902,
+            -0.1357
+          ],
+          [
+            386,
+            -0.1299
+          ],
+          [
+            650,
+            0.1235
+          ],
+          [
+            5004,
+            -0.1201
+          ],
+          [
+            3895,
+            -0.1147
+          ],
+          [
+            804,
+            0.1143
+          ],
+          [
+            4095,
+            0.1128
+          ]
+        ]
+      }
+    },
+    {
+      "step": 25,
+      "tool": "vector_op",
+      "args": {
+        "out": "nonekey",
+        "op": "sub",
+        "a": "none32",
+        "b": "valid32"
+      },
+      "result": {
+        "name": "nonekey",
+        "dim": 13824,
+        "norm": 8.9888,
+        "top_dims": [
+          [
+            5267,
+            2.5361
+          ],
+          [
+            7429,
+            -1.9647
+          ],
+          [
+            9852,
+            1.5781
+          ],
+          [
+            976,
+            -1.4628
+          ],
+          [
+            2320,
+            1.4499
+          ],
+          [
+            9486,
+            -1.3672
+          ],
+          [
+            2424,
+            1.3493
+          ],
+          [
+            946,
+            1.3291
+          ]
+        ]
+      }
+    },
+    {
+      "step": 26,
+      "tool": "vector_op",
+      "args": {
+        "out": "nonekeyp",
+        "op": "project_out",
+        "a": "nonekey",
+        "b": "other32"
+      },
+      "result": {
+        "name": "nonekeyp",
+        "dim": 13824,
+        "norm": 8.9613,
+        "top_dims": [
+          [
+            5267,
+            2.5269
+          ],
+          [
+            7429,
+            -1.9618
+          ],
+          [
+            9486,
+            -1.4739
+          ],
+          [
+            976,
+            -1.456
+          ],
+          [
+            2320,
+            1.4023
+          ],
+          [
+            2424,
+            1.3474
+          ],
+          [
+            946,
+            1.3143
+          ],
+          [
+            4438,
+            -1.2914
+          ]
+        ]
+      }
+    },
+    {
+      "step": 27,
+      "tool": "vector_op",
+      "args": {
+        "out": "nonekeys",
+        "op": "topk",
+        "a": "nonekeyp",
+        "k": 2678
+      },
+      "result": {
+        "name": "nonekeys",
+        "dim": 13824,
+        "norm": 8.329,
+        "top_dims": [
+          [
+            5267,
+            2.5269
+          ],
+          [
+            7429,
+            -1.9618
+          ],
+          [
+            9486,
+            -1.4739
+          ],
+          [
+            976,
+            -1.456
+          ],
+          [
+            2320,
+            1.4023
+          ],
+          [
+            2424,
+            1.3474
+          ],
+          [
+            946,
+            1.3143
+          ],
+          [
+            4438,
+            -1.2914
+          ]
+        ]
+      }
+    },
+    {
+      "step": 28,
+      "tool": "vector_op",
+      "args": {
+        "out": "c",
+        "op": "cosine",
+        "a": "nonekeys",
+        "b": "none32"
+      },
+      "result": {
+        "cosine": -0.005556972231715918
+      }
+    },
+    {
+      "step": 28,
+      "tool": "vector_op",
+      "args": {
+        "out": "c",
+        "op": "cosine",
+        "a": "nonekeys",
+        "b": "valid32"
+      },
+      "result": {
+        "cosine": -0.2204873263835907
+      }
+    },
+    {
+      "step": 28,
+      "tool": "vector_op",
+      "args": {
+        "out": "c",
+        "op": "cosine",
+        "a": "nonekeys",
+        "b": "other32"
+      },
+      "result": {
+        "cosine": -0.016404008492827415
+      }
+    },
+    {
+      "step": 29,
+      "tool": "vector_op",
+      "args": {
+        "out": "projectkey32",
+        "op": "sub",
+        "a": "none32",
+        "b": "other32"
+      },
+      "result": {
+        "name": "projectkey32",
+        "dim": 13824,
+        "norm": 2.0363,
+        "top_dims": [
+          [
+            8333,
+            0.4173
+          ],
+          [
+            6091,
+            0.38
+          ],
+          [
+            11794,
+            0.3677
+          ],
+          [
+            976,
+            -0.3241
+          ],
+          [
+            4438,
+            -0.3132
+          ],
+          [
+            9486,
+            -0.2891
+          ],
+          [
+            6361,
+            -0.2872
+          ],
+          [
+            9852,
+            0.2812
+          ]
+        ]
+      }
+    },
+    {
+      "step": 30,
+      "tool": "vector_op",
+      "args": {
+        "out": "projectkeyp32",
+        "op": "project_out",
+        "a": "projectkey32",
+        "b": "other32"
+      },
+      "result": {
+        "name": "projectkeyp32",
+        "dim": 13824,
+        "norm": 2.0308,
+        "top_dims": [
+          [
+            8333,
+            0.4274
+          ],
+          [
+            6091,
+            0.3705
+          ],
+          [
+            11794,
+            0.3638
+          ],
+          [
+            976,
+            -0.3227
+          ],
+          [
+            9486,
+            -0.3117
+          ],
+          [
+            4438,
+            -0.3062
+          ],
+          [
+            6361,
+            -0.2876
+          ],
+          [
+            2424,
+            0.2766
+          ]
+        ]
+      }
+    },
+    {
+      "step": 31,
+      "tool": "vector_op",
+      "args": {
+        "out": "project5",
+        "op": "scale",
+        "a": "projectkeyp32",
+        "scalar": 5
+      },
+      "result": {
+        "name": "project5",
+        "dim": 13824,
+        "norm": 10.1541,
+        "top_dims": [
+          [
+            8333,
+            2.1372
+          ],
+          [
+            6091,
+            1.8525
+          ],
+          [
+            11794,
+            1.8191
+          ],
+          [
+            976,
+            -1.6133
+          ],
+          [
+            9486,
+            -1.5583
+          ],
+          [
+            4438,
+            -1.5311
+          ],
+          [
+            6361,
+            -1.438
+          ],
+          [
+            2424,
+            1.3829
+          ]
+        ]
+      }
+    },
+    {
+      "step": 32,
+      "tool": "vector_op",
+      "args": {
+        "out": "joint32",
+        "op": "add",
+        "a": "nonekeyp",
+        "b": "project5"
+      },
+      "result": {
+        "name": "joint32",
+        "dim": 13824,
+        "norm": 14.8629,
+        "top_dims": [
+          [
+            976,
+            -3.0693
+          ],
+          [
+            9486,
+            -3.0321
+          ],
+          [
+            4438,
+            -2.8226
+          ],
+          [
+            2424,
+            2.7303
+          ],
+          [
+            8333,
+            2.6331
+          ],
+          [
+            11300,
+            2.3839
+          ],
+          [
+            9852,
+            2.3313
+          ],
+          [
+            5267,
+            2.2996
+          ]
+        ]
+      }
+    },
+    {
+      "step": 33,
+      "tool": "vector_op",
+      "args": {
+        "out": "joints32",
+        "op": "topk",
+        "a": "joint32",
+        "k": 2678
+      },
+      "result": {
+        "name": "joints32",
+        "dim": 13824,
+        "norm": 13.7692,
+        "top_dims": [
+          [
+            976,
+            -3.0693
+          ],
+          [
+            9486,
+            -3.0321
+          ],
+          [
+            4438,
+            -2.8226
+          ],
+          [
+            2424,
+            2.7303
+          ],
+          [
+            8333,
+            2.6331
+          ],
+          [
+            11300,
+            2.3839
+          ],
+          [
+            9852,
+            2.3313
+          ],
+          [
+            5267,
+            2.2996
+          ]
+        ]
+      }
+    },
+    {
+      "step": 34,
+      "tool": "vector_op",
+      "args": {
+        "out": "c",
+        "op": "cosine",
+        "a": "joints32",
+        "b": "none32"
+      },
+      "result": {
+        "cosine": 0.03108854591846466
+      }
+    },
+    {
+      "step": 34,
+      "tool": "vector_op",
+      "args": {
+        "out": "c",
+        "op": "cosine",
+        "a": "joints32",
+        "b": "valid32"
+      },
+      "result": {
+        "cosine": -0.1316658854484558
+      }
+    },
+    {
+      "step": 34,
+      "tool": "vector_op",
+      "args": {
+        "out": "c",
+        "op": "cosine",
+        "a": "joints32",
+        "b": "other32"
+      },
+      "result": {
+        "cosine": -0.009443534538149834
+      }
+    },
+    {
+      "step": 35,
+      "tool": "apply_edit",
+      "args": {
+        "spec": [
+          {
+            "type": "rank1",
+            "param": "model.layers.32.mlp.down_proj.weight",
+            "u": "none_unembed",
+            "v": "joints32",
+            "scale": 0.5,
+            "rows": 512,
+            "cols": 2678
+          }
+        ]
+      },
+      "result": {
+        "ok": true,
+        "entries": 1371136,
+        "budget": 1371619,
+        "l2_norm": 11.271
+      }
+    },
+    {
+      "step": 36,
+      "tool": "evaluate",
+      "args": {},
+      "result": {
+        "summary": {
+          "mass": {
+            "C1": {
+              "invalid": 0.0,
+              "success": 0.25,
+              "turn_acc": 0.5,
+              "n_scenarios": 12
+            },
+            "C2": {
+              "invalid": 0.0,
+              "success": 0.0,
+              "turn_acc": 0.4166666666666666,
+              "n_scenarios": 12
+            },
+            "C3": {
+              "invalid": 0.0,
+              "overapp_rate": 0.16666666666666666,
+              "success": 0.6666666666666666,
+              "turn_acc": 0.8888888888888888,
+              "n_scenarios": 12
+            },
+            "C4": {
+              "invalid": 0.0,
+              "post_change_success": 0.8333333333333334,
+              "should_change_acc": 0.9166666666666666,
+              "success": 0.5833333333333334,
+              "turn_acc": 0.8055555555555554,
+              "n_scenarios": 12
+            }
+          }
+        },
+        "n_dialogues": 48,
+        "errors": [
+          {
+            "dialogue_id": "mass-dev-00228-C1",
+            "condition": "C1",
+            "turn": 0,
+            "pred": "B",
+            "raw": "B",
+            "gold": "NONE"
+          },
+          {
+            "dialogue_id": "mass-dev-00104-C1",
+            "condition": "C1",
+            "turn": 0,
+            "pred": "A",
+            "raw": "A",
+            "gold": "NONE"
+          },
+          {
+            "dialogue_id": "mass-dev-00007-C1",
+            "condition": "C1",
+            "turn": 0,
+            "pred": "A",
+            "raw": "A",
+            "gold": "NONE"
+          },
+          {
+            "dialogue_id": "mass-dev-00127-C1",
+            "condition": "C1",
+            "turn": 0,
+            "pred": "B",
+            "raw": "B",
+            "gold": "NONE"
+          },
+          {
+            "dialogue_id": "mass-dev-00118-C1",
+            "condition": "C1",
+            "turn": 0,
+            "pred": "B",
+            "raw": "B",
+            "gold": "NONE"
+          }
+        ]
+      }
+    },
+    {
+      "step": 37,
+      "tool": "apply_edit",
+      "args": {
+        "spec": [
+          {
+            "type": "rank1",
+            "param": "model.layers.24.mlp.down_proj.weight",
+            "u": "value24",
+            "v": "key24s",
+            "scale": 5,
+            "rows": 5120,
+            "cols": 267
+          }
+        ]
+      },
+      "result": {
+        "ok": true,
+        "entries": 1367040,
+        "budget": 1371619,
+        "l2_norm": 32.06
+      }
+    },
+    {
+      "step": 38,
+      "tool": "evaluate",
+      "args": {},
+      "result": {
+        "summary": {
+          "mass": {
+            "C1": {
+              "invalid": 0.0,
+              "success": 0.25,
+              "turn_acc": 0.47222222222222215,
+              "n_scenarios": 12
+            },
+            "C2": {
+              "invalid": 0.0,
+              "success": 0.0,
+              "turn_acc": 0.38888888888888884,
+              "n_scenarios": 12
+            },
+            "C3": {
+              "invalid": 0.0,
+              "overapp_rate": 0.20833333333333334,
+              "success": 0.5,
+              "turn_acc": 0.8055555555555554,
+              "n_scenarios": 12
+            },
+            "C4": {
+              "invalid": 0.0,
+              "post_change_success": 1.0,
+              "should_change_acc": 1.0,
+              "success": 0.4166666666666667,
+              "turn_acc": 0.8055555555555555,
+              "n_scenarios": 12
+            }
+          }
+        },
+        "n_dialogues": 48,
+        "errors": [
+          {
+            "dialogue_id": "mass-dev-00228-C1",
+            "condition": "C1",
+            "turn": 0,
+            "pred": "B",
+            "raw": "B",
+            "gold": "NONE"
+          },
+          {
+            "dialogue_id": "mass-dev-00104-C1",
+            "condition": "C1",
+            "turn": 0,
+            "pred": "B",
+            "raw": "B",
+            "gold": "NONE"
+          },
+          {
+            "dialogue_id": "mass-dev-00007-C1",
+            "condition": "C1",
+            "turn": 0,
+            "pred": "B",
+            "raw": "B",
+            "gold": "NONE"
+          },
+          {
+            "dialogue_id": "mass-dev-00127-C1",
+            "condition": "C1",
+            "turn": 0,
+            "pred": "B",
+            "raw": "B",
+            "gold": "NONE"
+          },
+          {
+            "dialogue_id": "mass-dev-00118-C1",
+            "condition": "C1",
+            "turn": 0,
+            "pred": "B",
+            "raw": "B",
+            "gold": "NONE"
+          }
+        ]
+      }
+    },
+    {
+      "step": 39,
+      "tool": "apply_edit",
+      "args": {
+        "spec": [
+          {
+            "type": "rank1",
+            "param": "model.layers.12.mlp.down_proj.weight",
+            "u": "value12",
+            "v": "key12s",
+            "scale": 1,
+            "rows": 5120,
+            "cols": 267
+          }
+        ]
+      },
+      "result": {
+        "ok": true,
+        "entries": 1367040,
+        "budget": 1371619,
+        "l2_norm": 29.5534
+      }
+    },
+    {
+      "step": 40,
+      "tool": "evaluate",
+      "args": {},
+      "result": {
+        "summary": {
+          "mass": {
+            "C1": {
+              "invalid": 0.0,
+              "success": 0.16666666666666666,
+              "turn_acc": 0.49999999999999994,
+              "n_scenarios": 12
+            },
+            "C2": {
+              "invalid": 0.027777777777777776,
+              "success": 0.0,
+              "turn_acc": 0.4444444444444445,
+              "n_scenarios": 12
+            },
+            "C3": {
+              "invalid": 0.0,
+              "overapp_rate": 0.20833333333333334,
+              "success": 0.5833333333333334,
+              "turn_acc": 0.861111111111111,
+              "n_scenarios": 12
+            },
+            "C4": {
+              "invalid": 0.0,
+              "post_change_success": 0.75,
+              "should_change_acc": 0.875,
+              "success": 0.3333333333333333,
+              "turn_acc": 0.6944444444444443,
+              "n_scenarios": 12
+            }
+          }
+        },
+        "n_dialogues": 48,
+        "errors": [
+          {
+            "dialogue_id": "mass-dev-00096-C1",
+            "condition": "C1",
+            "turn": 0,
+            "pred": "NONE",
+            "raw": "NONE",
+            "gold": "B"
+          },
+          {
+            "dialogue_id": "mass-dev-00228-C1",
+            "condition": "C1",
+            "turn": 0,
+            "pred": "B",
+            "raw": "B",
+            "gold": "NONE"
+          },
+          {
+            "dialogue_id": "mass-dev-00007-C1",
+            "condition": "C1",
+            "turn": 0,
+            "pred": "A",
+            "raw": "A",
+            "gold": "NONE"
+          },
+          {
+            "dialogue_id": "mass-dev-00127-C1",
+            "condition": "C1",
+            "turn": 0,
+            "pred": "B",
+            "raw": "B",
+            "gold": "NONE"
+          },
+          {
+            "dialogue_id": "mass-dev-00118-C1",
+            "condition": "C1",
+            "turn": 0,
+            "pred": "B",
+            "raw": "B",
+            "gold": "NONE"
+          }
+        ]
+      }
+    },
+    {
+      "step": 41,
+      "tool": "revert_edit",
+      "args": {},
+      "result": {
+        "ok": true
+      }
+    },
+    {
+      "step": 42,
+      "tool": "capture",
+      "args": {
+        "texts": [
+          {
+            "user": "Project mass. Only consider molecules with a molecular weight of at most 250 daltons."
+          },
+          {
+            "user": "I'm working on project mass. Only consider molecules with a molecular weight of at most 250 daltons."
+          },
+          {
+            "user": "For project mass, only consider molecules with a molecular weight of at most 250 daltons."
+          }
+        ],
+        "layer": 12,
+        "site": "resid_post",
+        "position": "token:.",
+        "name": "rule_end12"
+      },
+      "result": {
+        "name": "rule_end12",
+        "dim": 5120,
+        "norm": 13.9995,
+        "top_dims": [
+          [
+            1917,
+            -3.3229
+          ],
+          [
+            902,
+            -3.0156
+          ],
+          [
+            4592,
+            -2.8073
+          ],
+          [
+            964,
+            1.9115
+          ],
+          [
+            2454,
+            -1.5234
+          ],
+          [
+            864,
+            1.4375
+          ],
+          [
+            3411,
+            -1.2995
+          ],
+          [
+            892,
+            1.2943
+          ]
+        ],
+        "per_text_cosine_to_mean": [
+          0.988,
+          0.981,
+          0.979
+        ]
+      }
+    },
+    {
+      "step": 42,
+      "tool": "capture",
+      "args": {
+        "texts": [
+          {
+            "user": "Project mass."
+          },
+          {
+            "user": "I'm working on project mass."
+          },
+          {
+            "user": "For project mass."
+          }
+        ],
+        "layer": 12,
+        "site": "resid_post",
+        "position": "token:.",
+        "name": "project_end12"
+      },
+      "result": {
+        "name": "project_end12",
+        "dim": 5120,
+        "norm": 13.0332,
+        "top_dims": [
+          [
+            1917,
+            -3.2865
+          ],
+          [
+            4592,
+            -3.2292
+          ],
+          [
+            902,
+            -3.1094
+          ],
+          [
+            2454,
+            -1.8073
+          ],
+          [
+            3690,
+            -1.5911
+          ],
+          [
+            964,
+            1.1094
+          ],
+          [
+            4932,
+            1.043
+          ],
+          [
+            892,
+            0.9935
+          ]
+        ],
+        "per_text_cosine_to_mean": [
+          0.936,
+          0.859,
+          0.945
+        ]
+      }
+    },
+    {
+      "step": 43,
+      "tool": "vector_op",
+      "args": {
+        "out": "fact12",
+        "op": "sub",
+        "a": "rule_end12",
+        "b": "project_end12"
+      },
+      "result": {
+        "name": "fact12",
+        "dim": 5120,
+        "norm": 12.4795,
+        "top_dims": [
+          [
+            864,
+            0.8939
+          ],
+          [
+            3824,
+            0.8785
+          ],
+          [
+            964,
+            0.8021
+          ],
+          [
+            3503,
+            -0.7565
+          ],
+          [
+            2296,
+            0.752
+          ],
+          [
+            3525,
+            0.7373
+          ],
+          [
+            637,
+            -0.7373
+          ],
+          [
+            2816,
+            0.7194
+          ]
+        ]
+      }
+    },
+    {
+      "step": 43,
+      "tool": "vector_op",
+      "args": {
+        "out": "key12clean",
+        "op": "project_out",
+        "a": "key12",
+        "b": "key_ctrl12"
+      },
+      "result": {
+        "name": "key12clean",
+        "dim": 13824,
+        "norm": 6.538,
+        "top_dims": [
+          [
+            7611,
+            1.0303
+          ],
+          [
+            5635,
+            0.734
+          ],
+          [
+            787,
+            -0.6953
+          ],
+          [
+            9596,
+            0.6273
+          ],
+          [
+            7238,
+            -0.5951
+          ],
+          [
+            8269,
+            -0.5467
+          ],
+          [
+            9599,
+            -0.5196
+          ],
+          [
+            7225,
+            -0.5107
+          ]
+        ]
+      }
+    },
+    {
+      "step": 44,
+      "tool": "apply_edit",
+      "args": {
+        "spec": [
+          {
+            "type": "rank1",
+            "param": "model.layers.12.mlp.down_proj.weight",
+            "u": "fact12",
+            "v": "key12clean",
+            "scale": 0.15,
+            "rows": 5120,
+            "cols": 267
+          }
+        ]
+      },
+      "result": {
+        "ok": true,
+        "entries": 1367040,
+        "budget": 1371619,
+        "l2_norm": 7.5054
+      }
+    },
+    {
+      "step": 45,
+      "tool": "evaluate",
+      "args": {},
+      "result": {
+        "summary": {
+          "mass": {
+            "C1": {
+              "invalid": 0.0,
+              "success": 0.16666666666666666,
+              "turn_acc": 0.49999999999999994,
+              "n_scenarios": 12
+            },
+            "C2": {
+              "invalid": 0.0,
+              "success": 0.0,
+              "turn_acc": 0.38888888888888884,
+              "n_scenarios": 12
+            },
+            "C3": {
+              "invalid": 0.0,
+              "overapp_rate": 0.125,
+              "success": 0.75,
+              "turn_acc": 0.9166666666666666,
+              "n_scenarios": 12
+            },
+            "C4": {
+              "invalid": 0.0,
+              "post_change_success": 0.9166666666666666,
+              "should_change_acc": 0.9583333333333334,
+              "success": 0.5,
+              "turn_acc": 0.8055555555555554,
+              "n_scenarios": 12
+            }
+          }
+        },
+        "n_dialogues": 48,
+        "errors": [
+          {
+            "dialogue_id": "mass-dev-00228-C1",
+            "condition": "C1",
+            "turn": 0,
+            "pred": "B",
+            "raw": "B",
+            "gold": "NONE"
+          },
+          {
+            "dialogue_id": "mass-dev-00007-C1",
+            "condition": "C1",
+            "turn": 0,
+            "pred": "A",
+            "raw": "A",
+            "gold": "NONE"
+          },
+          {
+            "dialogue_id": "mass-dev-00127-C1",
+            "condition": "C1",
+            "turn": 0,
+            "pred": "B",
+            "raw": "B",
+            "gold": "NONE"
+          },
+          {
+            "dialogue_id": "mass-dev-00118-C1",
+            "condition": "C1",
+            "turn": 0,
+            "pred": "B",
+            "raw": "B",
+            "gold": "NONE"
+          },
+          {
+            "dialogue_id": "mass-dev-00206-C1",
+            "condition": "C1",
+            "turn": 0,
+            "pred": "B",
+            "raw": "B",
+            "gold": "A"
+          }
+        ]
+      }
+    },
+    {
+      "step": 46,
+      "tool": "apply_edit",
+      "args": {
+        "spec": [
+          {
+            "type": "rank1",
+            "param": "model.layers.12.mlp.down_proj.weight",
+            "u": "fact12",
+            "v": "key12clean",
+            "scale": 0.5,
+            "rows": 5120,
+            "cols": 267
+          }
+        ]
+      },
+      "result": {
+        "ok": true,
+        "entries": 1367040,
+        "budget": 1371619,
+        "l2_norm": 25.018
+      }
+    },
+    {
+      "step": 47,
+      "tool": "evaluate",
+      "args": {},
+      "result": {
+        "summary": {
+          "mass": {
+            "C1": {
+              "invalid": 0.0,
+              "success": 0.16666666666666666,
+              "turn_acc": 0.5,
+              "n_scenarios": 12
+            },
+            "C2": {
+              "invalid": 0.0,
+              "success": 0.0,
+              "turn_acc": 0.38888888888888884,
+              "n_scenarios": 12
+            },
+            "C3": {
+              "invalid": 0.0,
+              "overapp_rate": 0.08333333333333333,
+              "success": 0.8333333333333334,
+              "turn_acc": 0.9444444444444443,
+              "n_scenarios": 12
+            },
+            "C4": {
+              "invalid": 0.0,
+              "post_change_success": 0.9166666666666666,
+              "should_change_acc": 0.9583333333333334,
+              "success": 0.5,
+              "turn_acc": 0.8055555555555554,
+              "n_scenarios": 12
+            }
+          }
+        },
+        "n_dialogues": 48,
+        "errors": [
+          {
+            "dialogue_id": "mass-dev-00228-C1",
+            "condition": "C1",
+            "turn": 0,
+            "pred": "B",
+            "raw": "B",
+            "gold": "NONE"
+          },
+          {
+            "dialogue_id": "mass-dev-00104-C1",
+            "condition": "C1",
+            "turn": 0,
+            "pred": "A",
+            "raw": "A",
+            "gold": "NONE"
+          },
+          {
+            "dialogue_id": "mass-dev-00007-C1",
+            "condition": "C1",
+            "turn": 0,
+            "pred": "A",
+            "raw": "A",
+            "gold": "NONE"
+          },
+          {
+            "dialogue_id": "mass-dev-00127-C1",
+            "condition": "C1",
+            "turn": 0,
+            "pred": "B",
+            "raw": "B",
+            "gold": "NONE"
+          },
+          {
+            "dialogue_id": "mass-dev-00118-C1",
+            "condition": "C1",
+            "turn": 0,
+            "pred": "B",
+            "raw": "B",
+            "gold": "NONE"
+          }
+        ]
+      }
+    },
+    {
+      "step": 48,
+      "tool": "apply_edit",
+      "args": {
+        "spec": [
+          {
+            "type": "rank1",
+            "param": "model.layers.32.mlp.down_proj.weight",
+            "u": "none_unembed",
+            "v": "joints32",
+            "scale": 0.2,
+            "rows": 512,
+            "cols": 2678
+          }
+        ]
+      },
+      "result": {
+        "ok": true,
+        "entries": 1371136,
+        "budget": 1371619,
+        "l2_norm": 4.5084
+      }
+    },
+    {
+      "step": 49,
+      "tool": "evaluate",
+      "args": {},
+      "result": {
+        "summary": {
+          "mass": {
+            "C1": {
+              "invalid": 0.0,
+              "success": 0.25,
+              "turn_acc": 0.5277777777777778,
+              "n_scenarios": 12
+            },
+            "C2": {
+              "invalid": 0.0,
+              "success": 0.0,
+              "turn_acc": 0.3611111111111111,
+              "n_scenarios": 12
+            },
+            "C3": {
+              "invalid": 0.0,
+              "overapp_rate": 0.08333333333333333,
+              "success": 0.8333333333333334,
+              "turn_acc": 0.9444444444444443,
+              "n_scenarios": 12
+            },
+            "C4": {
+              "invalid": 0.0,
+              "post_change_success": 0.9166666666666666,
+              "should_change_acc": 0.9583333333333334,
+              "success": 0.5833333333333334,
+              "turn_acc": 0.8333333333333331,
+              "n_scenarios": 12
+            }
+          }
+        },
+        "n_dialogues": 48,
+        "errors": [
+          {
+            "dialogue_id": "mass-dev-00228-C1",
+            "condition": "C1",
+            "turn": 0,
+            "pred": "B",
+            "raw": "B",
+            "gold": "NONE"
+          },
+          {
+            "dialogue_id": "mass-dev-00104-C1",
+            "condition": "C1",
+            "turn": 0,
+            "pred": "A",
+            "raw": "A",
+            "gold": "NONE"
+          },
+          {
+            "dialogue_id": "mass-dev-00007-C1",
+            "condition": "C1",
+            "turn": 0,
+            "pred": "A",
+            "raw": "A",
+            "gold": "NONE"
+          },
+          {
+            "dialogue_id": "mass-dev-00127-C1",
+            "condition": "C1",
+            "turn": 0,
+            "pred": "B",
+            "raw": "B",
+            "gold": "NONE"
+          },
+          {
+            "dialogue_id": "mass-dev-00118-C1",
+            "condition": "C1",
+            "turn": 0,
+            "pred": "B",
+            "raw": "B",
+            "gold": "NONE"
+          }
+        ]
+      }
+    },
+    {
+      "step": 50,
+      "tool": "apply_edit",
+      "args": {
+        "spec": [
+          {
+            "type": "rank1",
+            "param": "model.layers.32.mlp.down_proj.weight",
+            "u": "none_unembed",
+            "v": "joints32",
+            "scale": 0.35,
+            "rows": 512,
+            "cols": 2678
+          }
+        ]
+      },
+      "result": {
+        "ok": true,
+        "entries": 1371136,
+        "budget": 1371619,
+        "l2_norm": 7.8897
+      }
+    },
+    {
+      "step": 51,
+      "tool": "finish",
+      "args": {
+        "notes": "Submitted a sparse rank-one layer-32 down-projection edit using project/eligibility contrast features to steer NONE. Touches 1,371,136 entries, within budget. Final scale 0.35 interpolates tested scales 0.2 and 0.5 and was not separately evaluated. Results were limited: scale 0.5 improved C2 turn accuracy from 0.361 to 0.417 but degraded C3 and revision performance; scale 0.2 preserved those baseline metrics without improving C2. No tested edit achieved reliable project-rule recall."
+      },
+      "result": {
+        "ok": true
+      }
+    }
+  ],
+  "api_error": null,
+  "probe_batches": 25,
+  "edit_spec": [
+    {
+      "type": "rank1",
+      "param": "model.layers.32.mlp.down_proj.weight",
+      "u": "none_unembed",
+      "v": "joints32",
+      "scale": 0.35,
+      "rows": 512,
+      "cols": 2678
+    }
+  ],
+  "tool_history": [
+    {
+      "tool": "model_info",
+      "args": {},
+      "probe_batches": 0
+    },
+    {
+      "tool": "list_dev",
+      "args": {
+        "limit": 12
+      },
+      "probe_batches": 0
+    },
+    {
+      "tool": "evaluate",
+      "args": {},
+      "probe_batches": 1
+    },
+    {
+      "tool": "list_dev",
+      "args": {
+        "condition": "C2",
+        "limit": 12
+      },
+      "probe_batches": 1
+    },
+    {
+      "tool": "capture",
+      "args": {
+        "texts": [
+          {
+            "user": "Project mass."
+          },
+          {
+            "user": "I'm working on project mass."
+          },
+          {
+            "user": "For project mass, select the best molecule."
+          }
+        ],
+        "layer": 12,
+        "site": "mlp_in",
+        "position": "token:mass",
+        "name": "key_mass12"
+      },
+      "probe_batches": 2
+    },
+    {
+      "tool": "capture",
+      "args": {
+        "texts": [
+          {
+            "user": "Project Birch."
+          },
+          {
+            "user": "I'm working on project Cedar."
+          },
+          {
+            "user": "For project Maple, select the best molecule."
+          }
+        ],
+        "layer": 12,
+        "site": "mlp_in",
+        "position": "token:project",
+        "name": "key_ctrl12"
+      },
+      "probe_batches": 3
+    },
+    {
+      "tool": "capture",
+      "args": {
+        "texts": [
+          {
+            "user": "Project mass. Only consider molecules with a molecular weight of at most 250 daltons. Which candidate is closest to my starting molecule?"
+          },
+          {
+            "user": "Project mass. Exclude every candidate with MW greater than 250 Da. If no candidate has MW at most 250, answer NONE. Which candidate is closest?"
+          },
+          {
+            "user": "Project mass. The molecular weight limit is 250 daltons. First filter out molecules above 250 Da, then select the most similar remaining candidate. Which candidate is closest?"
+          }
+        ],
+        "layer": 12,
+        "site": "resid_post",
+        "position": "token:?",
+        "name": "rule12"
+      },
+      "probe_batches": 4
+    },
+    {
+      "tool": "capture",
+      "args": {
+        "texts": [
+          {
+            "user": "Project mass. Which candidate is closest to my starting molecule?"
+          },
+          {
+            "user": "Project mass. Which candidate is closest?"
+          },
+          {
+            "user": "Project mass. Which candidate is closest?"
+          }
+        ],
+        "layer": 12,
+        "site": "resid_post",
+        "position": "token:?",
+        "name": "norule12"
+      },
+      "probe_batches": 5
+    },
+    {
+      "tool": "capture",
+      "args": {
+        "texts": [
+          {
+            "user": "Project Birch."
+          },
+          {
+            "user": "I'm working on project Birch."
+          },
+          {
+            "user": "For project Birch, select the best molecule."
+          }
+        ],
+        "layer": 12,
+        "site": "mlp_in",
+        "position": "token:Birch",
+        "name": "key_other12"
+      },
+      "probe_batches": 6
+    },
+    {
+      "tool": "vector_op",
+      "args": {
+        "out": "value12",
+        "op": "sub",
+        "a": "rule12",
+        "b": "norule12"
+      },
+      "probe_batches": 6
+    },
+    {
+      "tool": "vector_op",
+      "args": {
+        "out": "key12",
+        "op": "project_out",
+        "a": "key_mass12",
+        "b": "key_other12"
+      },
+      "probe_batches": 6
+    },
+    {
+      "tool": "vector_op",
+      "args": {
+        "out": "key12s",
+        "op": "topk",
+        "a": "key12",
+        "k": 267
+      },
+      "probe_batches": 6
+    },
+    {
+      "tool": "apply_edit",
+      "args": {
+        "spec": [
+          {
+            "type": "rank1",
+            "param": "model.layers.12.mlp.down_proj.weight",
+            "u": "value12",
+            "v": "key12s",
+            "scale": 0.25,
+            "rows": 5120,
+            "cols": 267
+          }
+        ]
+      },
+      "probe_batches": 6
+    },
+    {
+      "tool": "evaluate",
+      "args": {},
+      "probe_batches": 7
+    },
+    {
+      "tool": "revert_edit",
+      "args": {},
+      "probe_batches": 7
+    },
+    {
+      "tool": "capture",
+      "args": {
+        "texts": [
+          {
+            "dialogue": "mass-dev-00001-C2",
+            "turn": 0
+          },
+          {
+            "dialogue": "mass-dev-00004-C2",
+            "turn": 0
+          },
+          {
+            "dialogue": "mass-dev-00006-C2",
+            "turn": 0
+          },
+          {
+            "dialogue": "mass-dev-00012-C2",
+            "turn": 0
+          },
+          {
+            "dialogue": "mass-dev-00013-C2",
+            "turn": 0
+          },
+          {
+            "dialogue": "mass-dev-00014-C2",
+            "turn": 0
+          }
+        ],
+        "layer": 24,
+        "site": "mlp_in",
+        "name": "mass24"
+      },
+      "probe_batches": 8
+    },
+    {
+      "tool": "capture",
+      "args": {
+        "texts": [
+          {
+            "dialogue": "mass-dev-00001-C3",
+            "turn": 0
+          },
+          {
+            "dialogue": "mass-dev-00004-C3",
+            "turn": 0
+          },
+          {
+            "dialogue": "mass-dev-00006-C3",
+            "turn": 0
+          },
+          {
+            "dialogue": "mass-dev-00012-C3",
+            "turn": 0
+          },
+          {
+            "dialogue": "mass-dev-00013-C3",
+            "turn": 0
+          },
+          {
+            "dialogue": "mass-dev-00014-C3",
+            "turn": 0
+          }
+        ],
+        "layer": 24,
+        "site": "mlp_in",
+        "name": "other24"
+      },
+      "probe_batches": 9
+    },
+    {
+      "tool": "capture",
+      "args": {
+        "texts": [
+          {
+            "dialogue": "mass-dev-00001-C1",
+            "turn": 0
+          },
+          {
+            "dialogue": "mass-dev-00004-C1",
+            "turn": 0
+          },
+          {
+            "dialogue": "mass-dev-00006-C1",
+            "turn": 0
+          },
+          {
+            "dialogue": "mass-dev-00012-C1",
+            "turn": 0
+          },
+          {
+            "dialogue": "mass-dev-00013-C1",
+            "turn": 0
+          },
+          {
+            "dialogue": "mass-dev-00014-C1",
+            "turn": 0
+          }
+        ],
+        "layer": 24,
+        "site": "resid_post",
+        "name": "rule24"
+      },
+      "probe_batches": 10
+    },
+    {
+      "tool": "capture",
+      "args": {
+        "texts": [
+          {
+            "dialogue": "mass-dev-00001-C2",
+            "turn": 0
+          },
+          {
+            "dialogue": "mass-dev-00004-C2",
+            "turn": 0
+          },
+          {
+            "dialogue": "mass-dev-00006-C2",
+            "turn": 0
+          },
+          {
+            "dialogue": "mass-dev-00012-C2",
+            "turn": 0
+          },
+          {
+            "dialogue": "mass-dev-00013-C2",
+            "turn": 0
+          },
+          {
+            "dialogue": "mass-dev-00014-C2",
+            "turn": 0
+          }
+        ],
+        "layer": 24,
+        "site": "resid_post",
+        "name": "norule24"
+      },
+      "probe_batches": 11
+    },
+    {
+      "tool": "vector_op",
+      "args": {
+        "out": "key24diff",
+        "op": "sub",
+        "a": "mass24",
+        "b": "other24"
+      },
+      "probe_batches": 11
+    },
+    {
+      "tool": "vector_op",
+      "args": {
+        "out": "value24",
+        "op": "sub",
+        "a": "rule24",
+        "b": "norule24"
+      },
+      "probe_batches": 11
+    },
+    {
+      "tool": "vector_op",
+      "args": {
+        "out": "key24p",
+        "op": "project_out",
+        "a": "key24diff",
+        "b": "other24"
+      },
+      "probe_batches": 11
+    },
+    {
+      "tool": "vector_op",
+      "args": {
+        "out": "key24s",
+        "op": "topk",
+        "a": "key24p",
+        "k": 267
+      },
+      "probe_batches": 11
+    },
+    {
+      "tool": "vector_op",
+      "args": {
+        "out": "cos",
+        "op": "cosine",
+        "a": "key24s",
+        "b": "other24"
+      },
+      "probe_batches": 11
+    },
+    {
+      "tool": "vector_op",
+      "args": {
+        "out": "cos",
+        "op": "cosine",
+        "a": "key24s",
+        "b": "mass24"
+      },
+      "probe_batches": 11
+    },
+    {
+      "tool": "apply_edit",
+      "args": {
+        "spec": [
+          {
+            "type": "rank1",
+            "param": "model.layers.24.mlp.down_proj.weight",
+            "u": "value24",
+            "v": "key24s",
+            "scale": 1.5,
+            "rows": 5120,
+            "cols": 267
+          }
+        ]
+      },
+      "probe_batches": 11
+    },
+    {
+      "tool": "evaluate",
+      "args": {},
+      "probe_batches": 12
+    },
+    {
+      "tool": "revert_edit",
+      "args": {},
+      "probe_batches": 12
+    },
+    {
+      "tool": "capture",
+      "args": {
+        "texts": [
+          {
+            "user": "Project mass. Which candidate is closest?\nA. MW 214.22 Da; similarity 0.17\nB. MW 284.36 Da; similarity 0.28\nIMPORTANT: The maximum allowed molecular weight is 250 daltons. B is ineligible. Only A is eligible. Answer A."
+          },
+          {
+            "user": "Project mass. Which candidate is closest?\nA. MW 442.38 Da; similarity 0.05\nB. MW 270.37 Da; similarity 0.20\nIMPORTANT: The maximum allowed molecular weight is 250 daltons. Both candidates exceed the limit. No eligible candidates. Answer NONE."
+          },
+          {
+            "user": "Project mass. Which candidate is closest?\nA. MW 330.55 Da; similarity 0.15\nB. MW 89.16 Da; similarity 0.00\nIMPORTANT: The maximum allowed molecular weight is 250 daltons. A is ineligible. Only B is eligible. Answer B."
+          },
+          {
+            "user": "Project mass. Which candidate is closest?\nA. MW 310.52 Da; similarity 0.23\nB. MW 290.83 Da; similarity 0.00\nC. MW 261.71 Da; similarity 0.11\nIMPORTANT: The maximum allowed molecular weight is 250 daltons. All candidates exceed the limit. No eligible candidates. Answer NONE."
+          },
+          {
+            "user": "Project mass. Which candidate is closest?\nA. MW 261.17 Da; similarity 0.57\nB. MW 236.27 Da; similarity 0.35\nC. MW 305.37 Da; similarity 0.24\nIMPORTANT: The maximum allowed molecular weight is 250 daltons. A and C are ineligible. Only B is eligible. Answer B."
+          },
+          {
+            "user": "Project mass. Which candidate is closest?\nA. MW 320.0 Da; similarity 0.60\nB. MW 280.0 Da; similarity 0.50\nC. MW 150.0 Da; similarity 0.40\nIMPORTANT: The maximum allowed molecular weight is 250 daltons. A and B are ineligible. Only C is eligible. Answer C."
+          }
+        ],
+        "layer": 24,
+        "site": "resid_post",
+        "name": "strong24"
+      },
+      "probe_batches": 13
+    },
+    {
+      "tool": "vector_op",
+      "args": {
+        "out": "strongvalue24",
+        "op": "sub",
+        "a": "strong24",
+        "b": "norule24"
+      },
+      "probe_batches": 13
+    },
+    {
+      "tool": "apply_edit",
+      "args": {
+        "spec": [
+          {
+            "type": "rank1",
+            "param": "model.layers.24.mlp.down_proj.weight",
+            "u": "strongvalue24",
+            "v": "key24s",
+            "scale": 1.5,
+            "rows": 5120,
+            "cols": 267
+          }
+        ]
+      },
+      "probe_batches": 13
+    },
+    {
+      "tool": "evaluate",
+      "args": {},
+      "probe_batches": 14
+    },
+    {
+      "tool": "revert_edit",
+      "args": {},
+      "probe_batches": 14
+    },
+    {
+      "tool": "capture",
+      "args": {
+        "texts": [
+          {
+            "dialogue": "mass-dev-00004-C2",
+            "turn": 0
+          },
+          {
+            "dialogue": "mass-dev-00007-C2",
+            "turn": 0
+          },
+          {
+            "dialogue": "mass-dev-00013-C2",
+            "turn": 0
+          },
+          {
+            "dialogue": "mass-dev-00001-C2",
+            "turn": 1
+          },
+          {
+            "dialogue": "mass-dev-00002-C2",
+            "turn": 1
+          },
+          {
+            "dialogue": "mass-dev-00005-C2",
+            "turn": 2
+          },
+          {
+            "dialogue": "mass-dev-00006-C2",
+            "turn": 1
+          },
+          {
+            "dialogue": "mass-dev-00012-C2",
+            "turn": 2
+          }
+        ],
+        "layer": 32,
+        "site": "mlp_in",
+        "name": "none32"
+      },
+      "probe_batches": 15
+    },
+    {
+      "tool": "capture",
+      "args": {
+        "texts": [
+          {
+            "dialogue": "mass-dev-00001-C2",
+            "turn": 0
+          },
+          {
+            "dialogue": "mass-dev-00002-C2",
+            "turn": 0
+          },
+          {
+            "dialogue": "mass-dev-00006-C2",
+            "turn": 0
+          },
+          {
+            "dialogue": "mass-dev-00012-C2",
+            "turn": 0
+          },
+          {
+            "dialogue": "mass-dev-00014-C2",
+            "turn": 0
+          },
+          {
+            "dialogue": "mass-dev-00004-C2",
+            "turn": 1
+          },
+          {
+            "dialogue": "mass-dev-00007-C2",
+            "turn": 1
+          },
+          {
+            "dialogue": "mass-dev-00013-C2",
+            "turn": 1
+          }
+        ],
+        "layer": 32,
+        "site": "mlp_in",
+        "name": "valid32"
+      },
+      "probe_batches": 16
+    },
+    {
+      "tool": "capture",
+      "args": {
+        "texts": [
+          {
+            "dialogue": "mass-dev-00004-C3",
+            "turn": 0
+          },
+          {
+            "dialogue": "mass-dev-00007-C3",
+            "turn": 0
+          },
+          {
+            "dialogue": "mass-dev-00013-C3",
+            "turn": 0
+          },
+          {
+            "dialogue": "mass-dev-00001-C3",
+            "turn": 1
+          },
+          {
+            "dialogue": "mass-dev-00002-C3",
+            "turn": 1
+          },
+          {
+            "dialogue": "mass-dev-00005-C3",
+            "turn": 2
+          },
+          {
+            "dialogue": "mass-dev-00006-C3",
+            "turn": 1
+          },
+          {
+            "dialogue": "mass-dev-00012-C3",
+            "turn": 2
+          }
+        ],
+        "layer": 32,
+        "site": "mlp_in",
+        "name": "other32"
+      },
+      "probe_batches": 17
+    },
+    {
+      "tool": "token_direction",
+      "args": {
+        "token": "NONE",
+        "name": "none_unembed"
+      },
+      "probe_batches": 17
+    },
+    {
+      "tool": "vector_op",
+      "args": {
+        "out": "nonekey",
+        "op": "sub",
+        "a": "none32",
+        "b": "valid32"
+      },
+      "probe_batches": 17
+    },
+    {
+      "tool": "vector_op",
+      "args": {
+        "out": "nonekeyp",
+        "op": "project_out",
+        "a": "nonekey",
+        "b": "other32"
+      },
+      "probe_batches": 17
+    },
+    {
+      "tool": "vector_op",
+      "args": {
+        "out": "nonekeys",
+        "op": "topk",
+        "a": "nonekeyp",
+        "k": 2678
+      },
+      "probe_batches": 17
+    },
+    {
+      "tool": "vector_op",
+      "args": {
+        "out": "c",
+        "op": "cosine",
+        "a": "nonekeys",
+        "b": "none32"
+      },
+      "probe_batches": 17
+    },
+    {
+      "tool": "vector_op",
+      "args": {
+        "out": "c",
+        "op": "cosine",
+        "a": "nonekeys",
+        "b": "valid32"
+      },
+      "probe_batches": 17
+    },
+    {
+      "tool": "vector_op",
+      "args": {
+        "out": "c",
+        "op": "cosine",
+        "a": "nonekeys",
+        "b": "other32"
+      },
+      "probe_batches": 17
+    },
+    {
+      "tool": "vector_op",
+      "args": {
+        "out": "projectkey32",
+        "op": "sub",
+        "a": "none32",
+        "b": "other32"
+      },
+      "probe_batches": 17
+    },
+    {
+      "tool": "vector_op",
+      "args": {
+        "out": "projectkeyp32",
+        "op": "project_out",
+        "a": "projectkey32",
+        "b": "other32"
+      },
+      "probe_batches": 17
+    },
+    {
+      "tool": "vector_op",
+      "args": {
+        "out": "project5",
+        "op": "scale",
+        "a": "projectkeyp32",
+        "scalar": 5
+      },
+      "probe_batches": 17
+    },
+    {
+      "tool": "vector_op",
+      "args": {
+        "out": "joint32",
+        "op": "add",
+        "a": "nonekeyp",
+        "b": "project5"
+      },
+      "probe_batches": 17
+    },
+    {
+      "tool": "vector_op",
+      "args": {
+        "out": "joints32",
+        "op": "topk",
+        "a": "joint32",
+        "k": 2678
+      },
+      "probe_batches": 17
+    },
+    {
+      "tool": "vector_op",
+      "args": {
+        "out": "c",
+        "op": "cosine",
+        "a": "joints32",
+        "b": "none32"
+      },
+      "probe_batches": 17
+    },
+    {
+      "tool": "vector_op",
+      "args": {
+        "out": "c",
+        "op": "cosine",
+        "a": "joints32",
+        "b": "valid32"
+      },
+      "probe_batches": 17
+    },
+    {
+      "tool": "vector_op",
+      "args": {
+        "out": "c",
+        "op": "cosine",
+        "a": "joints32",
+        "b": "other32"
+      },
+      "probe_batches": 17
+    },
+    {
+      "tool": "apply_edit",
+      "args": {
+        "spec": [
+          {
+            "type": "rank1",
+            "param": "model.layers.32.mlp.down_proj.weight",
+            "u": "none_unembed",
+            "v": "joints32",
+            "scale": 0.5,
+            "rows": 512,
+            "cols": 2678
+          }
+        ]
+      },
+      "probe_batches": 17
+    },
+    {
+      "tool": "evaluate",
+      "args": {},
+      "probe_batches": 18
+    },
+    {
+      "tool": "apply_edit",
+      "args": {
+        "spec": [
+          {
+            "type": "rank1",
+            "param": "model.layers.24.mlp.down_proj.weight",
+            "u": "value24",
+            "v": "key24s",
+            "scale": 5,
+            "rows": 5120,
+            "cols": 267
+          }
+        ]
+      },
+      "probe_batches": 18
+    },
+    {
+      "tool": "evaluate",
+      "args": {},
+      "probe_batches": 19
+    },
+    {
+      "tool": "apply_edit",
+      "args": {
+        "spec": [
+          {
+            "type": "rank1",
+            "param": "model.layers.12.mlp.down_proj.weight",
+            "u": "value12",
+            "v": "key12s",
+            "scale": 1,
+            "rows": 5120,
+            "cols": 267
+          }
+        ]
+      },
+      "probe_batches": 19
+    },
+    {
+      "tool": "evaluate",
+      "args": {},
+      "probe_batches": 20
+    },
+    {
+      "tool": "revert_edit",
+      "args": {},
+      "probe_batches": 20
+    },
+    {
+      "tool": "capture",
+      "args": {
+        "texts": [
+          {
+            "user": "Project mass. Only consider molecules with a molecular weight of at most 250 daltons."
+          },
+          {
+            "user": "I'm working on project mass. Only consider molecules with a molecular weight of at most 250 daltons."
+          },
+          {
+            "user": "For project mass, only consider molecules with a molecular weight of at most 250 daltons."
+          }
+        ],
+        "layer": 12,
+        "site": "resid_post",
+        "position": "token:.",
+        "name": "rule_end12"
+      },
+      "probe_batches": 21
+    },
+    {
+      "tool": "capture",
+      "args": {
+        "texts": [
+          {
+            "user": "Project mass."
+          },
+          {
+            "user": "I'm working on project mass."
+          },
+          {
+            "user": "For project mass."
+          }
+        ],
+        "layer": 12,
+        "site": "resid_post",
+        "position": "token:.",
+        "name": "project_end12"
+      },
+      "probe_batches": 22
+    },
+    {
+      "tool": "vector_op",
+      "args": {
+        "out": "fact12",
+        "op": "sub",
+        "a": "rule_end12",
+        "b": "project_end12"
+      },
+      "probe_batches": 22
+    },
+    {
+      "tool": "vector_op",
+      "args": {
+        "out": "key12clean",
+        "op": "project_out",
+        "a": "key12",
+        "b": "key_ctrl12"
+      },
+      "probe_batches": 22
+    },
+    {
+      "tool": "apply_edit",
+      "args": {
+        "spec": [
+          {
+            "type": "rank1",
+            "param": "model.layers.12.mlp.down_proj.weight",
+            "u": "fact12",
+            "v": "key12clean",
+            "scale": 0.15,
+            "rows": 5120,
+            "cols": 267
+          }
+        ]
+      },
+      "probe_batches": 22
+    },
+    {
+      "tool": "evaluate",
+      "args": {},
+      "probe_batches": 23
+    },
+    {
+      "tool": "apply_edit",
+      "args": {
+        "spec": [
+          {
+            "type": "rank1",
+            "param": "model.layers.12.mlp.down_proj.weight",
+            "u": "fact12",
+            "v": "key12clean",
+            "scale": 0.5,
+            "rows": 5120,
+            "cols": 267
+          }
+        ]
+      },
+      "probe_batches": 23
+    },
+    {
+      "tool": "evaluate",
+      "args": {},
+      "probe_batches": 24
+    },
+    {
+      "tool": "apply_edit",
+      "args": {
+        "spec": [
+          {
+            "type": "rank1",
+            "param": "model.layers.32.mlp.down_proj.weight",
+            "u": "none_unembed",
+            "v": "joints32",
+            "scale": 0.2,
+            "rows": 512,
+            "cols": 2678
+          }
+        ]
+      },
+      "probe_batches": 24
+    },
+    {
+      "tool": "evaluate",
+      "args": {},
+      "probe_batches": 25
+    },
+    {
+      "tool": "apply_edit",
+      "args": {
+        "spec": [
+          {
+            "type": "rank1",
+            "param": "model.layers.32.mlp.down_proj.weight",
+            "u": "none_unembed",
+            "v": "joints32",
+            "scale": 0.35,
+            "rows": 512,
+            "cols": 2678
+          }
+        ]
+      },
+      "probe_batches": 25
+    }
+  ],
+  "name": "wsp_mass_b0.0001_a0",
+  "rule": "mass",
+  "budget": 0.0001,
+  "attempt": 0,
+  "target_model": "allenai/OLMo-2-1124-13B-Instruct",
+  "train_sha256": "078478f6b8c210111f8eec6567a0cd6bad17fd8d5c2fd34380261146a0a7689b",
+  "agent_model": "gpt-6.1-sol",
+  "agent_api": "responses",
+  "seed": 0,
+  "max_probe_batches": 25,
+  "max_steps": 80,
+  "batch_size": 16,
+  "cost_usd": 2.085884,
+  "sha256": "19b93eb30f291d3ed1c9e0ad8fb2a330ec1ceff4f695c71ad532a6ffbdd881f7",
+  "usable": true,
+  "entries": 1371136,
+  "l2": 7.889679073248282
+}

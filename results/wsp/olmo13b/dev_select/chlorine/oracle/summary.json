@@ -1,0 +1,36 @@
+{
+  "info": {
+    "method": "oracle"
+  },
+  "summary": {
+    "chlorine": {
+      "C1": {
+        "invalid": 0.0,
+        "success": 1.0,
+        "turn_acc": 1.0,
+        "n_scenarios": 120
+      },
+      "C2": {
+        "invalid": 0.0,
+        "success": 1.0,
+        "turn_acc": 1.0,
+        "n_scenarios": 120
+      },
+      "C3": {
+        "invalid": 0.0,
+        "overapp_rate": 0.0,
+        "success": 1.0,
+        "turn_acc": 1.0,
+        "n_scenarios": 120
+      },
+      "C4": {
+        "invalid": 0.0,
+        "post_change_success": 1.0,
+        "should_change_acc": 1.0,
+        "success": 1.0,
+        "turn_acc": 1.0,
+        "n_scenarios": 120
+      }
+    }
+  }
+}
